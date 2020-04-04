@@ -11,7 +11,7 @@ Of course the design is very opinionated as features come always on a price!
 ## Getting started
 - You need JDK >= v11
 - Clone this repo
-- run "$ ./gradlew"
+- Current status: very raw yet but concepts start to emerge
 
 ## Who might be interested?
 In the first place it is a personal experimental ground. You can borrow ideas and concepts but 
@@ -64,7 +64,8 @@ different kind of relationships.
 The semantic wrappers of the sample model all delegate to a few data data structures. 
 - value is represented by **Leaf** -> matching fields in classes
 - values are contained in **Node**. A node contain contained other nodes. -> matching classes
-- **Group** is the collection to reflect 0..n relationships. A group can be made up of nodes. 
+- **Group** is the collection to reflect 0..n relationships. A group can be made up of nodes.
+- **Ref** serve as a named (and uniquely tagged) alias to other primitives (leaf, node, group).
 
 ![Backing data structures](./doc/pics/3_small.png)
 
