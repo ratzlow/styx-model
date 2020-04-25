@@ -14,7 +14,10 @@ public class Address extends IdentifiableDataContainer<Long> {
     }
 
     public Address(Long id) {
-        super(DESCRIPTOR, new LongLeaf(DESCRIPTOR.getIDKey().orElseThrow(), id), Leaf::getValueLong);
+        super(DESCRIPTOR,
+                new LongLeaf(DESCRIPTOR.getIDKey().orElseThrow(), id, true, true),
+                Leaf::getValueLong
+        );
     }
 
     public String getStreet() {

@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.util.Collection;
 
+// TODO (FRa) : (FRa): impl useGenericApiRaw()
 public class ApiUsageTest {
 
     @Test
@@ -43,7 +44,7 @@ public class ApiUsageTest {
         Group<Long, IdentifiableDataContainer<Long>> addresses = new Group<>(Descriptor.ADDRESS_GRP);
         IdentifiableDataContainer<Long> address = new IdentifiableDataContainer<>(
                 Descriptor.ADDRESS,
-                new LongLeaf(Descriptor.ADDRESS.getIDKey().orElseThrow(), 1L),
+                new LongLeaf(Descriptor.ADDRESS.getIDKey().orElseThrow(), 1L, true, true),
                 Leaf::getValueLong
         );
 
@@ -51,12 +52,6 @@ public class ApiUsageTest {
 
         Collection<Address> properTypedAddresses = new Group<>(Descriptor.ADDRESS_GRP);
         properTypedAddresses.add(new Address(2L));
-    }
-
-    @Disabled
-    @Test
-    void useGenericApiRaw() {
-
     }
 
 

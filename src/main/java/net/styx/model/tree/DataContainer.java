@@ -17,7 +17,7 @@ import static java.util.stream.Collectors.toMap;
  * The addition of an attribute (node/leaf) is only considered as a change if it comes along with
  * an attribute value change. The pure add operation of a clean attribute does not mark the container dirty.
  * <p>
- * // TODO (FRa) : (FRa): On commit() all empty/unset attributes are discarded, so only value holding attributes are preserved.
+ * // TODO (FRa) : (FRa): add API to discarded empty/unset.
  */
 public class DataContainer implements Node {
 
@@ -26,6 +26,8 @@ public class DataContainer implements Node {
     private static final Map<DataType, Function<Descriptor, Leaf>> LEAF_GENERATORS = createLeafGenerators();
 
     private final Descriptor descriptor;
+    // TODO (FRa) : (FRa): deep clones needed in current & previous to avoid side effects of manipulation items
+    //  in both containers
     private final State current;
     private final State previous;
 
@@ -37,24 +39,24 @@ public class DataContainer implements Node {
         this(descriptor, Collections.emptyList(), Collections.emptyList());
     }
 
+
     public DataContainer(Descriptor descriptor, Collection<Leaf> initialLeafs) {
         this(descriptor, initialLeafs, Collections.emptySet());
     }
 
-    public DataContainer(Descriptor descriptor, Collection<Leaf> initialLeafs, Collection<Node> initialNodes) {
+
+    public DataContainer(Descriptor descriptor, Collection<Leaf> initialLeafs,
+                         Collection<Node> initialNodes) {
         this(descriptor, initialLeafs, initialNodes, Collections.emptySet());
     }
 
-    public DataContainer(Descriptor descriptor, Collection<Leaf> initialLeafs, Collection<Node> initialNodes,
+
+    public DataContainer(Descriptor descriptor, Collection<Leaf> initialLeafs,
+                         Collection<Node> initialNodes,
                          Collection<Group<?, ?>> initialGroups) {
-
-        Map<Descriptor, Leaf> leafs = asMap(initialLeafs);
-        Map<Descriptor, Node> nodes = asMap(initialNodes);
-        Map<Descriptor, Group<?, ?>> groups = asMap(initialGroups);
-
         this.descriptor = descriptor;
-        this.previous = State.freeze(leafs, nodes, groups);
-        this.current = State.hot(leafs, nodes, groups);
+        this.previous = State.freeze(initialLeafs, initialNodes, initialGroups);
+        this.current = State.hot(initialLeafs, initialNodes, initialGroups);
     }
 
     //------------------------------------------------------------------------------
@@ -111,13 +113,12 @@ public class DataContainer implements Node {
     }
 
     @Override
-    public <T extends Leaf> T getLeaf(Descriptor descriptor, Class<T> clazz) {
-        Leaf leaf = getLeaf(descriptor);
-        return leaf != null ? clazz.cast(leaf) : null;
+    public <K, E extends Node & Identifiable<K>> void setGroup(Group<K, E> group) {
+        setGroupRaw(group);
     }
 
     @Override
-    public <K, E extends Node & Identifiable<K>> void setGroup(Group<K, E> group) {
+    public void setGroupRaw(Group<?, ?> group) {
         checkRange(group.getDescriptor());
         current.groups.put(group.getDescriptor(), group);
     }
@@ -162,6 +163,7 @@ public class DataContainer implements Node {
 
     @Override
     public void rollback() {
+        // revert all items to apply contract to tree
         current.allValues().forEach(Stateful::rollback);
     }
 
@@ -174,13 +176,13 @@ public class DataContainer implements Node {
                 .toString();
     }
 
-//--------------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------------------
     // internal implementation
     //--------------------------------------------------------------------------------------
 
     private void checkRange(Descriptor descriptor) {
         if (!this.descriptor.getChildren().contains(descriptor)) {
-            String msg = String.format("Attribute %s is not defined for %s", descriptor, this.descriptor.toString());
+            String msg = String.format("Attribute %s is not defined for %s", descriptor, this.descriptor);
             throw new IllegalArgumentException(msg);
         }
     }
@@ -207,18 +209,16 @@ public class DataContainer implements Node {
         return generators;
     }
 
-    private <T extends Described> Map<Descriptor, T> asMap(Collection<T> initialLeafs) {
-        return initialLeafs.stream().collect(toMap(Described::getDescriptor, identity(),
-                (existing, replacement) -> existing,
-                () -> new EnumMap<>(Descriptor.class))
-        );
-    }
 
 
     private static class State {
         private final Map<Descriptor, Leaf> leafs;
         private final Map<Descriptor, Node> nodes;
         private final Map<Descriptor, Group<?, ? extends Stateful>> groups;
+
+        //---------------------------------------------------------
+        // constructors & factories
+        //---------------------------------------------------------
 
         private State(Map<Descriptor, Leaf> leafs,
                       Map<Descriptor, Node> nodes,
@@ -228,21 +228,21 @@ public class DataContainer implements Node {
             this.groups = groups;
         }
 
-        static State freeze(Map<Descriptor, Leaf> leafs,
-                            Map<Descriptor, Node> nodes,
-                            Map<Descriptor, Group<?, ?>> groups) {
+        static State freeze(Collection<Leaf> leafs, Collection<Node> nodes, Collection<Group<?, ?>> groups) {
             return new State(
-                    Collections.unmodifiableMap(leafs),
-                    Collections.unmodifiableMap(nodes),
-                    Collections.unmodifiableMap(groups)
+                    Collections.unmodifiableMap(asMap(leafs)),
+                    Collections.unmodifiableMap(asMap(nodes)),
+                    Collections.unmodifiableMap(asMap(groups))
             );
         }
 
-        static State hot(Map<Descriptor, Leaf> leafs,
-                         Map<Descriptor, Node> nodes,
-                         Map<Descriptor, Group<?, ?>> groups) {
-            return new State(leafs, nodes, groups);
+        static State hot(Collection<Leaf> leafs, Collection<Node> nodes, Collection<Group<?, ?>> groups) {
+            return new State(asMap(leafs), asMap(nodes), asMap(groups));
         }
+
+        //---------------------------------------------------------
+        // API
+        //---------------------------------------------------------
 
         Stream<Stateful> allValues() {
             return Stream.of(
@@ -260,6 +260,19 @@ public class DataContainer implements Node {
 
             Map<Descriptor, ?> attributeContainer = members.getOrDefault(descriptor.getDataType(), leafs);
             return attributeContainer.remove(descriptor) != null;
+        }
+
+        //---------------------------------------------------------
+        // impl details
+        //---------------------------------------------------------
+
+        private static <T extends Described> Map<Descriptor, T> asMap(Collection<T> describedElements) {
+            return describedElements.stream().collect(
+                    toMap(Described::getDescriptor, identity(),
+                            (existing, replacement) -> existing,
+                            () -> new EnumMap<>(Descriptor.class)
+                    )
+            );
         }
     }
 }

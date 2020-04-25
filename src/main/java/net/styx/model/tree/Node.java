@@ -16,8 +16,6 @@ public interface Node extends Described, Stateful {
 
     Leaf getLeaf(Descriptor descriptor);
 
-    <T extends Leaf> T getLeaf(Descriptor descriptor, Class<T> clazz);
-
 
     //------------------------------------------------------------------
     // Node accessors
@@ -38,8 +36,15 @@ public interface Node extends Described, Stateful {
     // Group accessors
     //------------------------------------------------------------------
 
+    // TODO (FRa) : (FRa): rename method
+    void setGroupRaw(Group<?, ?> group);
+
     <K, E extends Node & Identifiable<K>> void setGroup(Group<K, E> group);
 
+    /**
+     * @param descriptor identifier of item to fetch or create
+     * @return either existing or lazily created {@link Group} container.
+     */
     Group<?, ?> getGroup(Descriptor descriptor);
 
     <K, E extends Node & Identifiable<K>> Group<K, E> getGroup(Descriptor descriptor,

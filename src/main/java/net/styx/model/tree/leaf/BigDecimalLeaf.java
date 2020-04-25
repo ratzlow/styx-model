@@ -13,6 +13,10 @@ public class BigDecimalLeaf extends AbstractLeaf<BigDecimal> {
         super(descriptor);
     }
 
+    public BigDecimalLeaf(Descriptor descriptor, BigDecimal value) {
+        super(descriptor, value);
+    }
+
     @Override
     public void setValueBigDec(BigDecimal val) {
         setValue(val);
@@ -27,5 +31,10 @@ public class BigDecimalLeaf extends AbstractLeaf<BigDecimal> {
     @Override
     public BigDecimal getValueBigDec() {
         return getValue();
+    }
+
+    @Override
+    public void setValueLeaf(Leaf from) {
+        setValueBigDec(from.getValueBigDec());
     }
 }

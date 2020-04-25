@@ -40,16 +40,6 @@ public class GroupTest {
         assertThat(addresses.size()).isEqualTo(0);
     }
 
-    @Test
-    void addElementWithoutAssignedIDisRejected() {
-        assertThat(addresses).isEmpty();
-        Address address = new Address();
-        address.getLeaf(Descriptor.ID).setValueLong(null);
-
-        assertThat(address.isEmpty()).isTrue();
-        assertThat(address.getID()).isNull();
-        assertThatNullPointerException().isThrownBy(() -> addresses.add(address));
-    }
 
     @Test
     void contains() {

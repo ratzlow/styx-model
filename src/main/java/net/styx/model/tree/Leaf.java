@@ -2,7 +2,7 @@ package net.styx.model.tree;
 
 import java.math.BigDecimal;
 
-public interface Leaf extends Described, Stateful {
+public interface Leaf extends Described, Stateful, MutationControl {
 
     default void setValueString(String value) {
         throw new UnsupportedOperationException(getDescriptor().toString());
@@ -47,4 +47,7 @@ public interface Leaf extends Described, Stateful {
     default Long getValueLong() {
         throw new UnsupportedOperationException(getDescriptor().toString());
     }
+
+    // TODO (FRa) : (FRa): can be hidden behind generics
+    void setValueLeaf(Leaf from);
 }

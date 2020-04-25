@@ -14,7 +14,7 @@ public class Book extends IdentifiableDataContainer<Long> {
     }
 
     public Book(Long id) {
-        super(DESCRIPTOR, new LongLeaf(DESCRIPTOR.getIDKey().orElseThrow(), id), Leaf::getValueLong);
+        super(DESCRIPTOR, new LongLeaf(DESCRIPTOR.getIDKey().orElseThrow(), id, true, true), Leaf::getValueLong);
     }
 
 

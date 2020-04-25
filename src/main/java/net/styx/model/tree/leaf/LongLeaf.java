@@ -1,6 +1,7 @@
 package net.styx.model.tree.leaf;
 
 import net.styx.model.meta.Descriptor;
+import net.styx.model.tree.Leaf;
 
 import java.util.Objects;
 
@@ -26,6 +27,10 @@ public class LongLeaf extends AbstractLeaf<Long> {
         setValue(val);
     }
 
+    public LongLeaf(Descriptor descriptor, Long val, boolean markDirty, boolean markFrozen) {
+        super(descriptor, val, markDirty, markFrozen);
+    }
+
     //----------------------------------------------------------------------
     // API
     //----------------------------------------------------------------------
@@ -43,5 +48,10 @@ public class LongLeaf extends AbstractLeaf<Long> {
     @Override
     protected boolean same(Long current, Long val) {
         return Objects.equals(current, val);
+    }
+
+    @Override
+    public void setValueLeaf(Leaf from) {
+        setValue(from.getValueLong());
     }
 }

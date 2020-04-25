@@ -1,9 +1,9 @@
 package net.styx.model;
 
 import net.styx.model.meta.Descriptor;
-import net.styx.model.tree.DataContainer;
-import net.styx.model.tree.Group;
-import net.styx.model.tree.Leaf;
+import net.styx.model.traverse.Mutation;
+import net.styx.model.traverse.Operation;
+import net.styx.model.tree.*;
 import net.styx.model.tree.leaf.BigDecimalLeaf;
 import net.styx.model.tree.leaf.IntLeaf;
 import net.styx.model.tree.leaf.StringLeaf;
@@ -17,6 +17,9 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+// TODO (FRa) : (FRa): test rollback of add/remove ops
+// TODO (FRa) : (FRa): test access to attributes not put into map, make it NPE safe by creating
+//  member on demand (problem: components which need ID -> should only apply for elem in coll)
 public class DataContainerTest {
 
     @Test
@@ -251,7 +254,7 @@ public class DataContainerTest {
         }
 
         @Test
-        void commit() {
+        void commitFromEmpty() {
             personParent.commit();
             assertThat(personParent.getLeaf(personNameLeaf.getDescriptor()).getValueString()).isEqualTo("Pepe");
             assertThat(personParent.getNode(dogChild.getDescriptor()).getLeaf(Descriptor.AGE).getValueInt()).isEqualTo(11);
@@ -262,19 +265,6 @@ public class DataContainerTest {
             assertThat(personParent.isEmpty()).as("New values are persisted to model!").isFalse();
         }
 
-        @Test
-        void rollback() {
-            personParent.rollback();
-            assertThat(personParent.getLeaf(personNameLeaf.getDescriptor()).getValueString()).isNull();
-            assertThat(personParent.getNode(dogChild.getDescriptor()).getLeaf(Descriptor.AGE).getValueInt())
-                    .as("Native type cannot be null as default")
-                    .isEqualTo(IntLeaf.EMPTY_VAL.getValueInt());
-            assertThat(personParent.isChanged()).isFalse();
-            assertThat(dogChild.isChanged()).isFalse();
-            assertThat(personNameLeaf.isChanged()).isFalse();
-            assertThat(personParent.isEmpty()).as("New values are discarded from model! " +
-                    "Even though wrapper classes are preserved so far!").isTrue();
-        }
 
         @Test
         void commitMultipleTimes() {
@@ -299,5 +289,42 @@ public class DataContainerTest {
             personParent.rollback();
             assertThat(personParent.isChanged()).as("Second rollback is idempotent!").isFalse();
         }
+
+        @Test
+        void rollbackToEmpty() {
+            personParent.rollback();
+            assertThat(personParent.getLeaf(personNameLeaf.getDescriptor()).getValueString()).isNull();
+            assertThat(personParent.getNode(dogChild.getDescriptor()).getLeaf(Descriptor.AGE).getValueInt())
+                    .as("Native type cannot be null as default")
+                    .isEqualTo(IntLeaf.EMPTY_VAL.getValueInt());
+            assertThat(personParent.isChanged()).isFalse();
+            assertThat(dogChild.isChanged()).isFalse();
+            assertThat(personNameLeaf.isChanged()).isFalse();
+            assertThat(personParent.isEmpty()).as("New values are discarded from model! " +
+                    "Even though wrapper classes are preserved so far!").isTrue();
+        }
+
+        /*
+        [] -> +name +dog.age -> rollback == [] // add
+        [name, dog.age] -> +income %dog.name  // add, mod
+        [name, income, dog.age] -> -income +dog.name -dog  // add, rm
+        [name, income, dog.age] -> %income -income +dog.name -dog // add, rm, mod
+        [name, income, dog.age] -> -dog.name(=null) +dog.name  // add, rm
+        [name, income, dog.age] -> +dog.name -dog.name(=null) // add, rm
+        [name, income, dog.age] -> -name +name // add, rm
+        [name, income, dog.age] -> %name -name // mod, rm
+        [name, income, dog.age] -> +name %name -name -name  // add, mod, rm
+        [name, income, dog.age] -> +books(2) // add
+        [name, income, dog.age] -> +books(0) // add
+        [name, income, dog.age, books(2)] -> -books // add
+        [name, income, dog.age, books(2)] -> +books(=null) // add
+        [name, income, dog.age, books(2)] -> -books(1) // add
+        [name, income, dog.age, books(2)] -> +book  // add
+        [name, income, dog.age, books(0)] -> +book -book // add
+
+        @Test
+        void rollbackToInitial() {
+        }
+        */
     }
 }

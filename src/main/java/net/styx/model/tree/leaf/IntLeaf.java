@@ -2,18 +2,27 @@ package net.styx.model.tree.leaf;
 
 import net.styx.model.meta.Descriptor;
 import net.styx.model.tree.Leaf;
+import net.styx.model.tree.MutationControlMixin;
 
 public class IntLeaf implements Leaf {
 
     public static final Leaf EMPTY_VAL = new IntLeaf(Descriptor.UNDEF);
-    final Descriptor descriptor;
 
-    private int current = -1;
-    private int previous = -1;
+    private static final int EMPTY_VAL_NATIVE = -1;
+    private final MutationControlMixin mutationControl = new MutationControlMixin();
+    private final Descriptor descriptor;
+
+    private int current = EMPTY_VAL_NATIVE;
+    private int previous = EMPTY_VAL_NATIVE;
     private boolean changed = false;
 
     public IntLeaf(Descriptor descriptor) {
+        this(descriptor, EMPTY_VAL_NATIVE);
+    }
+
+    public IntLeaf(Descriptor descriptor, int value) {
         this.descriptor = descriptor;
+        setValueInt(value);
     }
 
     @Override
@@ -23,6 +32,8 @@ public class IntLeaf implements Leaf {
 
     @Override
     public void setValueInt(int val) {
+        mutationControl.checkFrozen(this);
+
         // nothing to mutate
         if (current == val) return;
 
@@ -36,6 +47,11 @@ public class IntLeaf implements Leaf {
         } else {
             current = val;
         }
+    }
+
+    @Override
+    public void setValueLeaf(Leaf from) {
+        setValueInt(from.getValueInt());
     }
 
     @Override
@@ -59,9 +75,25 @@ public class IntLeaf implements Leaf {
     }
 
     @Override
+    public boolean freeze() {
+        return mutationControl.freeze();
+    }
+
+    @Override
+    public boolean unfreeze() {
+        return mutationControl.unfreeze();
+    }
+
+    @Override
+    public boolean isFrozen() {
+        return mutationControl.isFrozen();
+    }
+
+    @Override
     public void commit() {
         if (changed) {
-            previous = -1;
+            mutationControl.checkFrozen(this);
+            previous = EMPTY_VAL_NATIVE;
             changed = false;
         }
     }
@@ -69,8 +101,9 @@ public class IntLeaf implements Leaf {
     @Override
     public void rollback() {
         if (changed) {
+            mutationControl.checkFrozen(this);
             current = previous;
-            previous = -1;
+            previous = EMPTY_VAL_NATIVE;
             changed = false;
         }
     }

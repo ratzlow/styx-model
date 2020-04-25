@@ -2,6 +2,7 @@ package net.styx.model.tree.leaf;
 
 import net.styx.model.meta.Descriptor;
 import net.styx.model.tree.Leaf;
+import net.styx.model.tree.MutationControlMixin;
 
 import java.util.Objects;
 
@@ -9,6 +10,7 @@ import java.util.Objects;
 public abstract class AbstractLeaf<T> implements Leaf {
 
     private final Descriptor descriptor;
+    private final MutationControlMixin mutationControl = new MutationControlMixin();
 
     protected T current;
     protected T previous;
@@ -19,20 +21,31 @@ public abstract class AbstractLeaf<T> implements Leaf {
     }
 
     protected AbstractLeaf(Descriptor descriptor, T val) {
-        this.descriptor = descriptor;
-        setValue(val);
+        this(descriptor, val, true, false);
     }
 
     protected AbstractLeaf(Descriptor descriptor, T val, boolean markDirty) {
+        this(descriptor, val, markDirty, false);
+    }
+
+    protected AbstractLeaf(Descriptor descriptor, T val, boolean markDirty, boolean markFrozen) {
         this.descriptor = descriptor;
+
         if (markDirty) {
             setValue(val);
         } else {
             current = val;
         }
+
+        if (markFrozen) {
+            mutationControl.freeze();
+        }
     }
 
+
     protected void setValue(T val) {
+        mutationControl.checkFrozen(this);
+
         // nothing to mutate
         if (same(current, val)) {
             return;
@@ -83,6 +96,7 @@ public abstract class AbstractLeaf<T> implements Leaf {
     @Override
     public void commit() {
         if (changed) {
+            mutationControl.checkFrozen(this);
             previous = null;
             changed = false;
         }
@@ -91,11 +105,35 @@ public abstract class AbstractLeaf<T> implements Leaf {
     @Override
     public void rollback() {
         if (changed) {
+            mutationControl.checkFrozen(this);
             current = previous;
             previous = null;
             changed = false;
         }
     }
+
+    //-------------------------------------------------------------------------------------------------
+    // MutationControl
+    //-------------------------------------------------------------------------------------------------
+
+    @Override
+    public boolean freeze() {
+        return mutationControl.freeze();
+    }
+
+    @Override
+    public boolean unfreeze() {
+        return mutationControl.unfreeze();
+    }
+
+    @Override
+    public boolean isFrozen() {
+        return mutationControl.isFrozen();
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    // Object overrides
+    //-------------------------------------------------------------------------------------------------
 
     @Override
     public boolean equals(Object o) {

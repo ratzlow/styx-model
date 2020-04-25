@@ -25,4 +25,9 @@ public class EnumLeaf extends AbstractLeaf<Enum<?>> {
     protected boolean same(Enum<?> current, Enum<?> val) {
         return current == val;
     }
+
+    @Override
+    public void setValueLeaf(Leaf from) {
+        setValue(from.getValueEnum());
+    }
 }

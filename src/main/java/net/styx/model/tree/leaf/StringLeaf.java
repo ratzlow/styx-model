@@ -1,6 +1,7 @@
 package net.styx.model.tree.leaf;
 
 import net.styx.model.meta.Descriptor;
+import net.styx.model.tree.Leaf;
 
 import java.util.Objects;
 
@@ -45,6 +46,11 @@ public class StringLeaf extends AbstractLeaf<String> {
     @Override
     public void setValueString(String val) {
         setValue(val);
+    }
+
+    @Override
+    public void setValueLeaf(Leaf from) {
+        setValueString(from.getValueString());
     }
 
     @Override

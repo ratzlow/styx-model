@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toSet;
 
-// TODO (FRa) : (FRa): Group for Leafs
+// TODO (FRa) : (FRa): Group of Leafs; Group of Groups
 // TODO (FRa) : (FRa): optimization: introduce lazy init to save mem consumption
 // TODO (FRa) : (FRa): optimization: try to avoid garbage for rollback by just dealing with dirty, added, missing objects
 
@@ -220,6 +220,9 @@ public class Group<K, E extends Stateful & Identifiable<K>>
         return Collections.unmodifiableCollection(initial.values());
     }
 
+    public E get(K key) {
+        return col.get(key);
+    }
 
     /**
      * @implNote order of checks matter!
