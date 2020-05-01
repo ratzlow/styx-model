@@ -1,10 +1,10 @@
 package net.styx.model;
 
 import net.styx.model.meta.Descriptor;
-import net.styx.model.tree.DataContainer;
+import net.styx.model.tree.DefaultContainer;
 import net.styx.model.tree.Leaf;
 
-public class Book extends DataContainer {
+public class Book extends DefaultContainer {
 
     public static final Descriptor DESCRIPTOR = Descriptor.BOOK;
 
@@ -21,7 +21,7 @@ public class Book extends DataContainer {
     }
 
     public void setISBN(String isbn) {
-        set(Descriptor.ISBN, leaf -> leaf.setValueString(isbn));
+        setLeaf(Descriptor.ISBN, leaf -> leaf.setValueString(isbn));
     }
 
 
@@ -30,6 +30,6 @@ public class Book extends DataContainer {
     }
 
     public void setTitle(String title) {
-        set(Descriptor.TITLE, leaf -> leaf.setValueString(title));
+        setLeaf(Descriptor.TITLE, leaf -> leaf.setValueString(title));
     }
 }

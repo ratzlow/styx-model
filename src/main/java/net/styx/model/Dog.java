@@ -1,10 +1,10 @@
 package net.styx.model;
 
 import net.styx.model.meta.Descriptor;
-import net.styx.model.tree.DataContainer;
+import net.styx.model.tree.DefaultContainer;
 import net.styx.model.tree.Leaf;
 
-public class Dog extends DataContainer {
+public class Dog extends DefaultContainer {
 
     public static final Descriptor DESCRIPTOR = Descriptor.DOG;
 
@@ -17,7 +17,7 @@ public class Dog extends DataContainer {
     //------------------------------------------------------------------------------------------
 
     public void setName(String name) {
-        set(Descriptor.NAME, leaf -> leaf.setValueString(name));
+        setLeaf(Descriptor.NAME, leaf -> leaf.setValueString(name));
     }
 
     public String getName() {
@@ -26,7 +26,7 @@ public class Dog extends DataContainer {
 
 
     public void setAge(int age) {
-        set(Descriptor.AGE, leaf -> leaf.setValueInt(age));
+        setLeaf(Descriptor.AGE, leaf -> leaf.setValueInt(age));
     }
 
     public int getAge() {

@@ -1,13 +1,13 @@
 package net.styx.model;
 
 import net.styx.model.meta.Descriptor;
-import net.styx.model.tree.DataContainer;
+import net.styx.model.tree.DefaultContainer;
 import net.styx.model.tree.Leaf;
 
 import java.math.BigDecimal;
 import java.util.Collection;
 
-public class Person extends DataContainer {
+public class Person extends DefaultContainer {
 
     private static final Descriptor DESCRIPTOR = Descriptor.PERSON;
 
@@ -20,7 +20,7 @@ public class Person extends DataContainer {
     //------------------------------------------------------------------------------------------
 
     public void setName(String name) {
-        set(Descriptor.NAME, leaf -> leaf.setValueString(name));
+        setLeaf(Descriptor.NAME, leaf -> leaf.setValueString(name));
     }
 
     public String getName() {
@@ -29,7 +29,7 @@ public class Person extends DataContainer {
 
 
     public void setAge(int age) {
-        set(Descriptor.AGE, leaf -> leaf.setValueInt(age));
+        setLeaf(Descriptor.AGE, leaf -> leaf.setValueInt(age));
     }
 
     public int getAge() {
@@ -38,7 +38,7 @@ public class Person extends DataContainer {
 
 
     public void setIncome(BigDecimal income) {
-        set(Descriptor.INCOME, leaf -> leaf.setValueBigDec(income));
+        setLeaf(Descriptor.INCOME, leaf -> leaf.setValueBigDec(income));
     }
 
     public BigDecimal getIncome() {
@@ -47,7 +47,7 @@ public class Person extends DataContainer {
 
 
     public void setGender(Gender gender) {
-        set(Descriptor.GENDER, leaf -> leaf.setValueEnum(gender));
+        setLeaf(Descriptor.GENDER, leaf -> leaf.setValueEnum(gender));
     }
 
     public Gender getGender() {

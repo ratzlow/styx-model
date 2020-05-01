@@ -1,10 +1,10 @@
 package net.styx.model;
 
 import net.styx.model.meta.Descriptor;
-import net.styx.model.tree.DataContainer;
+import net.styx.model.tree.DefaultContainer;
 import net.styx.model.tree.Leaf;
 
-public class Address extends DataContainer {
+public class Address extends DefaultContainer {
 
     public static final Descriptor DESCRIPTOR = Descriptor.ADDRESS;
 
@@ -21,7 +21,7 @@ public class Address extends DataContainer {
     }
 
     public void setStreet(String street) {
-        set(Descriptor.STREET, leaf -> leaf.setValueString(street));
+        setLeaf(Descriptor.STREET, leaf -> leaf.setValueString(street));
     }
 
     public String getCity() {
@@ -29,7 +29,7 @@ public class Address extends DataContainer {
     }
 
     public void setCity(String city) {
-        set(Descriptor.CITY, leaf -> leaf.setValueString(city));
+        setLeaf(Descriptor.CITY, leaf -> leaf.setValueString(city));
     }
 
     public int getZip() {
@@ -37,6 +37,6 @@ public class Address extends DataContainer {
     }
 
     public void setZip(int zip) {
-        set(Descriptor.ZIP, leaf -> leaf.setValueInt(zip));
+        setLeaf(Descriptor.ZIP, leaf -> leaf.setValueInt(zip));
     }
 }

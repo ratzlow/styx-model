@@ -18,17 +18,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 // TODO (FRa) : (FRa): test rollback of add/remove ops
 // TODO (FRa) : (FRa): test access to attributes not put into map, make it NPE safe by creating
 //  member on demand (problem: components which need ID -> should only apply for elem in coll)
-public class DataContainerTest {
+public class DefaultContainerTest {
 
     @Test
     void isDirty() {
-        DataContainer dc = new DataContainer(Descriptor.ADDRESS);
+        Container dc = new DefaultContainer(Descriptor.ADDRESS);
         assertThat(dc.isChanged()).isFalse();
         assertThat(dc.isEmpty()).isTrue();
 
         assertThatThrownBy(() -> dc.getLeaf(Descriptor.AGE))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> dc.set(Descriptor.AGE, leaf -> leaf.setValueInt(87)))
+        assertThatThrownBy(() -> dc.setLeaf(Descriptor.AGE, leaf -> leaf.setValueInt(87)))
                 .isInstanceOf(IllegalArgumentException.class);
 
         assertThatThrownBy(() -> dc.setLeaf(BigDecimalLeaf.EMPTY_VAL))
@@ -38,7 +38,7 @@ public class DataContainerTest {
 
     @Test
     void isDirtyAfterAddingNewLeaf() {
-        DataContainer dc = new DataContainer(Descriptor.ADDRESS);
+        Container dc = new DefaultContainer(Descriptor.ADDRESS);
         var leaf = new StringLeaf(Descriptor.CITY);
         assertThat(leaf.isChanged()).isFalse();
         dc.setLeaf(leaf);
@@ -49,13 +49,13 @@ public class DataContainerTest {
 
     @Test
     void isEmtpyWhenAllComponentsAreEmpty() {
-        DataContainer parent = new DataContainer(Descriptor.PERSON);
+        Container parent = new DefaultContainer(Descriptor.PERSON);
         assertThat(parent.isEmpty()).isTrue();
 
         var leaf = new StringLeaf(Descriptor.NAME);
         assertThat(leaf.isEmpty());
 
-        var child = new DataContainer(Descriptor.DOG);
+        var child = new DefaultContainer(Descriptor.DOG);
         assertThat(child.isEmpty()).isTrue();
 
         parent.setLeaf(leaf);
@@ -77,7 +77,7 @@ public class DataContainerTest {
         assertThat(parent.isEmpty()).isFalse();
         assertThat(parent.isChanged()).isTrue();
 
-        DataContainer childContainer = parent.getContainer(Descriptor.DOG, DataContainer.class);
+        Container childContainer = parent.getContainer(Descriptor.DOG, DefaultContainer.class);
         childContainer.getLeaf(Descriptor.NAME).setValueString(null);
         assertThat(parent.isEmpty()).isTrue();
         assertThat(parent.isChanged()).isFalse();
@@ -85,11 +85,11 @@ public class DataContainerTest {
 
     @Test
     void isEmptyAfterComponentsAreRemoved() {
-        DataContainer child = new DataContainer(Descriptor.DOG);
+        Container child = new DefaultContainer(Descriptor.DOG);
         child.setLeaf(new StringLeaf(Descriptor.NAME, "Snoopy"));
         assertThat(child.isEmpty()).isFalse();
 
-        DataContainer parent = new DataContainer(Descriptor.PERSON);
+        Container parent = new DefaultContainer(Descriptor.PERSON);
         parent.setContainer(child);
         assertThat(child.isEmpty()).isFalse();
         assertThat(child.isChanged()).isTrue();
@@ -104,7 +104,7 @@ public class DataContainerTest {
 
     @Test
     void isDirtyOnEmptyContainerAdd() {
-        DataContainer dc = new DataContainer(Descriptor.ADDRESS);
+        Container dc = new DefaultContainer(Descriptor.ADDRESS);
         dc.setLeaf(new StringLeaf(Descriptor.CITY, "Zurich"));
         assertThat(dc.isChanged()).isTrue();
     }
@@ -114,7 +114,7 @@ public class DataContainerTest {
         StringLeaf street = new StringLeaf(Descriptor.STREET, "Main", false);
         assertThat(street.isChanged()).isFalse();
 
-        DataContainer dc = new DataContainer(Descriptor.ADDRESS, Set.of(street));
+        Container dc = new DefaultContainer(Descriptor.ADDRESS, Set.of(street));
         assertThat(dc.isChanged()).isFalse();
         assertThat(dc.isEmpty()).isFalse();
 
@@ -137,12 +137,12 @@ public class DataContainerTest {
         assertThat(dc.isChanged()).isFalse();
 
         //  - if it is dirty -> container is dirty
-        dc.set(Descriptor.CITY, leaf -> leaf.setValueString("Leipzig"));
+        dc.setLeaf(Descriptor.CITY, leaf -> leaf.setValueString("Leipzig"));
         assertThat(city.isChanged()).isTrue();
         assertThat(dc.isChanged()).isTrue();
 
         //  reset to previous unset value -> container clean
-        dc.set(Descriptor.CITY, leaf -> leaf.setValueString(null));
+        dc.setLeaf(Descriptor.CITY, leaf -> leaf.setValueString(null));
         assertThat(city.isChanged()).isFalse();
         assertThat(dc.isChanged()).isFalse();
     }
@@ -150,10 +150,10 @@ public class DataContainerTest {
     @Test
     void groupAddAndClear() {
 
-        DataContainer person = new DataContainer(Descriptor.PERSON);
+        Container person = new DefaultContainer(Descriptor.PERSON);
         assertThat(person.isEmpty()).isTrue();
 
-        Group books = new Group<>(Descriptor.BOOK_GRP);
+        Group books = new DefaultGroup<>(Descriptor.BOOK_GRP);
         person.setGroup(books);
         assertThat(person.isEmpty()).isTrue();
 
@@ -170,7 +170,7 @@ public class DataContainerTest {
     @Test
     void groupCommitRollback() {
         Book firstBook = new Book(1);
-        Group<?> books = new Group<>(Descriptor.BOOK_GRP, Set.of(firstBook));
+        Group<?> books = new DefaultGroup<>(Descriptor.BOOK_GRP, Set.of(firstBook));
         assertThat(books.isChanged())
                 .as("Group with only empty initial elements cannot have changes!")
                 .isFalse();
@@ -178,7 +178,7 @@ public class DataContainerTest {
         firstBook.setTitle("Life of Brian");
         assertThat(books.isChanged()).isTrue();
 
-        Container person = new DataContainer(Descriptor.PERSON);
+        Container person = new DefaultContainer(Descriptor.PERSON);
         person.setGroup(books);
         assertThat(books.isChanged()).isTrue();
         assertThat(person.isEmpty()).isFalse();
@@ -198,7 +198,7 @@ public class DataContainerTest {
         assertThat(person.isEmpty()).isFalse();
 
         // add 2nd group and deal with 1 committed and 1 added group
-        Group<Address> addresses = new Group<>(Descriptor.ADDRESS_GRP);
+        Group<Address> addresses = new DefaultGroup<>(Descriptor.ADDRESS_GRP);
         addresses.add(new Address(1));
         person.setGroup(addresses);
         assertThat(person.isChanged()).isTrue();
@@ -212,13 +212,13 @@ public class DataContainerTest {
 
     @Test
     void deleteGroup() {
-        Group<Address> addresses = new Group<>(Descriptor.ADDRESS_GRP);
+        Group<Address> addresses = new DefaultGroup<>(Descriptor.ADDRESS_GRP);
         addresses.add(new Address(1));
 
-        Group<Book> books = new Group<>(Descriptor.BOOK_GRP);
+        Group<Book> books = new DefaultGroup<>(Descriptor.BOOK_GRP);
         books.add(new Book(1));
 
-        DataContainer person = new DataContainer(Descriptor.PERSON);
+        Container person = new DefaultContainer(Descriptor.PERSON);
         person.setGroup(addresses);
         person.setGroup(books);
 
@@ -235,13 +235,13 @@ public class DataContainerTest {
     @DisplayName("Propagate or discard changes to graph")
     @Nested
     class StatefulOperations {
-        DataContainer personParent;
-        DataContainer dogChild;
+        Container personParent;
+        Container dogChild;
         Leaf personNameLeaf;
 
         @BeforeEach
         void before() {
-            dogChild = new DataContainer(Descriptor.DOG);
+            dogChild = new DefaultContainer(Descriptor.DOG);
             dogChild.setLeaf(new IntLeaf(Descriptor.AGE));
             dogChild.getLeaf(Descriptor.AGE).setValueInt(11);
             assertThat(dogChild.isChanged()).isTrue();
@@ -249,7 +249,7 @@ public class DataContainerTest {
             personNameLeaf = new StringLeaf(Descriptor.NAME, "Pepe");
             assertThat(personNameLeaf.isChanged()).isTrue();
 
-            personParent = new DataContainer(Descriptor.PERSON);
+            personParent = new DefaultContainer(Descriptor.PERSON);
             personParent.setLeaf(personNameLeaf);
             personParent.setContainer(dogChild);
             assertThat(personParent.isChanged()).isTrue();

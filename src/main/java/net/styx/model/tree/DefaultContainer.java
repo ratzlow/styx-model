@@ -23,7 +23,7 @@ import static java.util.stream.Collectors.toMap;
  * <p>
  * // TODO (FRa) : (FRa): add API to discarded empty/unset.
  */
-public class DataContainer implements Container {
+public class DefaultContainer implements Container {
 
     // TODO (FRa) : (FRa): make sure those leafs are immutable, to avoid side effects
     private static final Map<DataType, Leaf> UNSET_LEAFS = createUnsetLeafs();
@@ -39,23 +39,23 @@ public class DataContainer implements Container {
     // constructors
     //------------------------------------------------------------------------------
 
-    public DataContainer(NodeID nodeID) {
+    public DefaultContainer(NodeID nodeID) {
         this(nodeID, emptyList(), emptyList(), emptyList());
     }
 
-    public DataContainer(NodeID nodeID, long idx) {
+    public DefaultContainer(NodeID nodeID, long idx) {
         this(new IdxNodeID(nodeID.getDescriptor(), idx), emptyList(), emptyList(), emptyList());
     }
 
 
-    public DataContainer(NodeID nodeID, Collection<Leaf> initialLeafs) {
+    public DefaultContainer(NodeID nodeID, Collection<Leaf> initialLeafs) {
         this(nodeID, initialLeafs, Collections.emptySet(), emptyList());
     }
 
-    private DataContainer(NodeID nodeID,
-                          Collection<Leaf> initialLeafs,
-                          Collection<Container> initialContainers,
-                          Collection<Group<?>> initialGroups) {
+    private DefaultContainer(NodeID nodeID,
+                             Collection<Leaf> initialLeafs,
+                             Collection<Container> initialContainers,
+                             Collection<Group<?>> initialGroups) {
         this.nodeID = nodeID;
         this.previous = State.freeze(initialLeafs, initialContainers, initialGroups);
         this.current = State.hot(initialLeafs, initialContainers, initialGroups);
@@ -66,6 +66,7 @@ public class DataContainer implements Container {
     // public API
     //------------------------------------------------------------------------------
 
+
     @Deprecated
     public <T> T get(NodeID nodeID, Function<Leaf, T> dispatchGet) {
         checkRange(nodeID);
@@ -73,8 +74,7 @@ public class DataContainer implements Container {
         return dispatchGet.apply(leaf);
     }
 
-    @Deprecated
-    public void set(NodeID nodeID, Consumer<Leaf> dispatchSet) {
+    public void setLeaf(NodeID nodeID, Consumer<Leaf> dispatchSet) {
         checkRange(nodeID);
         Function<NodeID, Leaf> leafGenerator = LEAF_GENERATORS.get(nodeID.getDescriptor().getDataType());
         Leaf leaf = current.leafs.computeIfAbsent(nodeID, leafGenerator);
@@ -133,7 +133,7 @@ public class DataContainer implements Container {
 
     private <E extends Node> Group<E> getGroupInternal(NodeID nodeID) {
         checkRange(nodeID);
-        Group<? extends Node> group = current.groups.computeIfAbsent(nodeID, desc -> new Group<E>(nodeID));
+        Group<? extends Node> group = current.groups.computeIfAbsent(nodeID, desc -> new DefaultGroup<E>(nodeID));
         return (Group<E>) group;
     }
 
@@ -172,7 +172,7 @@ public class DataContainer implements Container {
 
     @Override
     public String toString() {
-        return new StringJoiner(", ", DataContainer.class.getSimpleName() + "[", "]")
+        return new StringJoiner(", ", DefaultContainer.class.getSimpleName() + "[", "]")
                 .add("nodeID=" + nodeID)
                 .add("current=" + current)
                 .add("previous=" + previous)

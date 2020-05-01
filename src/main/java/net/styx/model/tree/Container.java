@@ -2,6 +2,8 @@ package net.styx.model.tree;
 
 import net.styx.model.meta.NodeID;
 
+import java.util.function.Consumer;
+
 // TODO (FRa) : (FRa): simplify interface to pass NodeType to unify across different subclasses;
 // TODO (FRa) : (FRa): rewrite setters to allow method chaining
 public interface Container extends Node {
@@ -15,6 +17,8 @@ public interface Container extends Node {
      * @throws NullPointerException if leaf is null
      */
     void setLeaf(Leaf leaf);
+
+    void setLeaf(NodeID nodeID, Consumer<Leaf> dispatchSet);
 
     Leaf getLeaf(NodeID nodeID);
 
