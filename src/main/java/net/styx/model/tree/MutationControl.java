@@ -1,5 +1,6 @@
 package net.styx.model.tree;
 
+// TODO (FRa) : (FRa): add to Node
 public interface MutationControl {
 
     /**

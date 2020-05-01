@@ -1,6 +1,7 @@
 package net.styx.model.tree;
 
 import net.styx.model.meta.Descriptor;
+import net.styx.model.meta.NodeID;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -11,58 +12,48 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toSet;
 
-// TODO (FRa) : (FRa): Group of Leafs; Group of Groups
-// TODO (FRa) : (FRa): optimization: introduce lazy init to save mem consumption
-// TODO (FRa) : (FRa): optimization: try to avoid garbage for rollback by just dealing with dirty, added, missing objects
-
-// TODO (FRa) : (FRa): diff check effectively different,
-//  same no elements, same instances of elements, change of instance
-
-// TODO (FRa) : (FRa): diff
+// TODO (FRa) : (FRa): perf: try to avoid garbage for rollback by just dealing with dirty, added, missing objects
+// TODO (FRa) : (FRa): diff check effectively different, same no elements, same instances of elements, change of instance
 
 /**
  * No duplicates are allowed since every element needs to be identifiable by unique ID.
  * Order is preserved by default but can be overridden with alternative Map implementation.
  *
- * @param <K> key of the elements part of the Group, have to be only unique within this group
  * @param <E> the elements stored, which can be identified by their key
  */
-public class Group<K, E extends Stateful & Identifiable<K>>
-        implements Collection<E>, Stateful, Described {
+public class Group<E extends Node> implements Collection<E>, Node {
 
-    private final Descriptor descriptor;
-    private final Supplier<Map<K, E>> generator;
-
+    private final NodeID nodeID;
+    private final Supplier<Map<NodeID, E>> generator;
 
     /**
      * Elements are mutable but will remain in collection. Access to previous element state
      * possible available via Node API
      */
-    private final Map<K, E> initial;
-    private final Map<K, E> col;
+    private Map<NodeID, E> backup;
+    private final Map<NodeID, E> col;
 
     //------------------------------------------------------------------
     // constructors
     //------------------------------------------------------------------
 
-    public Group(Descriptor descriptor) {
-        this(descriptor, LinkedHashMap::new);
+    public Group(NodeID nodeID) {
+        this(nodeID, LinkedHashMap::new);
     }
 
-    public Group(Descriptor descriptor, Supplier<Map<K, E>> generator) {
-        this(descriptor, generator, Collections.emptyList());
+    public Group(NodeID nodeID, Supplier<Map<NodeID, E>> generator) {
+        this(nodeID, generator, Collections.emptyList());
     }
 
-    public Group(Descriptor descriptor, Collection<E> col) {
-        this(descriptor, LinkedHashMap::new, col);
+    public Group(NodeID nodeID, Collection<E> col) {
+        this(nodeID, LinkedHashMap::new, col);
     }
 
-    public Group(Descriptor descriptor, Supplier<Map<K, E>> generator,
+    public Group(NodeID nodeID, Supplier<Map<NodeID, E>> generator,
                  Collection<E> col) {
-        this.descriptor = descriptor;
+        this.nodeID = nodeID;
         this.generator = generator;
         this.col = toMap(col);
-        this.initial = backup(col);
     }
 
     //------------------------------------------------------------------
@@ -104,7 +95,8 @@ public class Group<K, E extends Stateful & Identifiable<K>>
 
     @Override
     public boolean add(E element) {
-        K key = element.getID();
+        checkBackup();
+        NodeID key = element.getNodeID();
         Objects.requireNonNull(key, () -> "No key assigned to node! " + element);
         E prev = col.put(key, element);
         return !Objects.equals(prev, element);
@@ -112,8 +104,9 @@ public class Group<K, E extends Stateful & Identifiable<K>>
 
     @Override
     public boolean remove(Object element) {
+        checkBackup();
         E value = typeCheck(element);
-        K key = value.getID();
+        NodeID key = value.getNodeID();
         E previousValue = col.remove(key);
         return previousValue != null;
     }
@@ -125,9 +118,10 @@ public class Group<K, E extends Stateful & Identifiable<K>>
 
     @Override
     public boolean addAll(Collection<? extends E> c) {
+        checkBackup();
         boolean changed = false;
         for (E e : c) {
-            K key = e.getID();
+            NodeID key = e.getNodeID();
             E prev = col.put(key, e);
             changed = !Objects.equals(prev, e) || changed;
         }
@@ -136,10 +130,11 @@ public class Group<K, E extends Stateful & Identifiable<K>>
 
     @Override
     public boolean removeAll(Collection<?> c) {
+        checkBackup();
         boolean changed = false;
         for (Object o : c) {
             E elem = typeCheck(o);
-            E prev = col.remove(elem.getID());
+            E prev = col.remove(elem.getNodeID());
             changed = prev != null || changed;
         }
         return changed;
@@ -148,19 +143,19 @@ public class Group<K, E extends Stateful & Identifiable<K>>
 
     @Override
     public boolean retainAll(Collection<?> c) {
-        Set<K> keysToRetain = c.stream()
-                .map(e -> typeCheck(e).getID())
+        Set<NodeID> keysToRetain = c.stream()
+                .map(e -> typeCheck(e).getNodeID())
                 .collect(toSet());
-        Set<K> keysToRemove = new HashSet<>(col.keySet());
+        Set<NodeID> keysToRemove = new HashSet<>(col.keySet());
         keysToRemove.removeAll(keysToRetain);
-        for (K removalKey : keysToRemove) {
-            col.remove(removalKey);
-        }
-        return !keysToRemove.isEmpty();
+
+        return removeElements(keysToRemove);
     }
+
 
     @Override
     public void clear() {
+        checkBackup();
         col.clear();
     }
 
@@ -175,17 +170,14 @@ public class Group<K, E extends Stateful & Identifiable<K>>
 
     @Override
     public boolean removeIf(Predicate<? super E> filter) {
-        Set<K> removalKeys = col.values().stream()
+        Set<NodeID> keysToRemove = col.values().stream()
                 .filter(filter)
-                .map(Identifiable::getID)
+                .map(Node::getNodeID)
                 .collect(toSet());
 
-        for (K key : removalKeys) {
-            col.remove(key);
-        }
-
-        return !removalKeys.isEmpty();
+        return removeElements(keysToRemove);
     }
+
 
     @Override
     public Spliterator<E> spliterator() {
@@ -211,17 +203,10 @@ public class Group<K, E extends Stateful & Identifiable<K>>
     // generic domain model overrides
     //------------------------------------------------------------------
 
+
     @Override
-    public Descriptor getDescriptor() {
-        return descriptor;
-    }
-
-    public Collection<E> getInitial() {
-        return Collections.unmodifiableCollection(initial.values());
-    }
-
-    public E get(K key) {
-        return col.get(key);
+    public NodeID getNodeID() {
+        return nodeID;
     }
 
     /**
@@ -229,9 +214,7 @@ public class Group<K, E extends Stateful & Identifiable<K>>
      */
     @Override
     public boolean isChanged() {
-        if (col.size() != initial.size())           return true;
-        if (col.isEmpty())                          return false;
-        if (!col.keySet().equals(initial.keySet())) return true;
+        if (backup != null && !col.keySet().equals(backup.keySet())) return true;
 
         return col.values().stream().anyMatch(Stateful::isChanged);
     }
@@ -239,29 +222,54 @@ public class Group<K, E extends Stateful & Identifiable<K>>
     @Override
     public void commit() {
         col.values().forEach(Stateful::commit);
-        initial.clear();
-        initial.putAll(col);
+        backup = null;
     }
 
     @Override
     public void rollback() {
-        initial.values().forEach(Stateful::rollback);
-        col.clear();
-        col.putAll(initial);
+        // ensure the same elements are restored
+        if (backup != null) {
+            col.clear();
+            col.putAll(backup);
+            backup = null;
+        }
+        col.values().forEach(Stateful::rollback);
+    }
+
+    @Override
+    public void accept(TreeWalker treeWalker) {
+        treeWalker.onEnter(this);
+        col.values().forEach(e -> e.accept(treeWalker));
+        treeWalker.onExit(getNodeID());
     }
 
     //------------------------------------------------------------------
     // implementation details
     //------------------------------------------------------------------
 
-    private Map<K, E> backup(Collection<E> c) {
-        return toMap( c != null ? c : Collections.emptySet() );
+    private boolean removeElements(Set<NodeID> keysToRemove) {
+        if (!keysToRemove.isEmpty()) {
+            checkBackup();
+        }
+
+        for (NodeID removalKey : keysToRemove) {
+            col.remove(removalKey);
+        }
+        return !keysToRemove.isEmpty();
     }
 
-    private Map<K, E> toMap(Collection<E> c) {
-        Map<K, E> temp = generator.get();
+    private void checkBackup() {
+        if (backup == null) {
+            Map<NodeID, E> temp = generator.get();
+            temp.putAll(col);
+            backup = Map.copyOf(temp);
+        }
+    }
+
+    private Map<NodeID, E> toMap(Collection<E> c) {
+        Map<NodeID, E> temp = generator.get();
         for (E e : c) {
-            temp.put(e.getID(), e);
+            temp.put(e.getNodeID(), e);
         }
         return temp;
     }
@@ -271,6 +279,7 @@ public class Group<K, E extends Stateful & Identifiable<K>>
             throw new NullPointerException("Element must not be null!");
         }
 
+        Descriptor descriptor = nodeID.getDescriptor();
         Class<?> definingClass = descriptor.getDefiningClass();
         boolean typeOK = descriptor.getChildren().stream()
                 .map(Descriptor::getDefiningClass)

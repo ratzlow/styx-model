@@ -1,6 +1,6 @@
 package net.styx.model.tree;
 
-// TODO (FRa) : (FRa): is object creation to big overhead? design vs. perf opt
+// TODO (FRa) : (FRa): perf: is object creation to big overhead? design vs. perf opt
 public class MutationControlMixin implements MutationControl {
 
     private boolean frozen = false;
@@ -27,7 +27,7 @@ public class MutationControlMixin implements MutationControl {
     // TODO (FRa) : (FRa): supply better msg
     public void checkFrozen(MutationControl checkedItem) {
         if (frozen) {
-            throw new UnsupportedOperationException("Item is frozen. No mutation allowed! " + checkedItem);
+            throw new UnsupportedOperationException("Node is frozen. No mutation allowed! " + checkedItem);
         }
     }
 }

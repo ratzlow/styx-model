@@ -1,6 +1,7 @@
 package net.styx.model.tree.leaf;
 
 import net.styx.model.meta.Descriptor;
+import net.styx.model.meta.NodeID;
 import net.styx.model.tree.Leaf;
 
 import java.util.Objects;
@@ -18,24 +19,24 @@ public class StringLeaf extends AbstractLeaf<String> {
         super(Descriptor.UNDEF);
     }
 
-    public StringLeaf(Descriptor descriptor) {
-        super(descriptor);
+    public StringLeaf(NodeID nodeID) {
+        super(nodeID);
     }
 
     public StringLeaf(String val) {
         this(Descriptor.UNDEF, val);
     }
 
-    public StringLeaf(Descriptor descriptor, String val) {
-        super(descriptor, val);
+    public StringLeaf(NodeID nodeID, String val) {
+        super(nodeID, val);
     }
 
     public StringLeaf(String val, boolean markDirty) {
         super(Descriptor.UNDEF, val, markDirty);
     }
 
-    public StringLeaf(Descriptor descriptor, String val, boolean markDirty) {
-        super(descriptor, val, markDirty);
+    public StringLeaf(NodeID nodeID, String val, boolean markDirty) {
+        super(nodeID, val, markDirty);
     }
 
 

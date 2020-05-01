@@ -55,14 +55,14 @@ public class Person extends DataContainer {
     }
 
     public void setDog(Dog dog) {
-        setNode(dog);
+        setContainer(dog);
     }
 
     public Dog getDog() {
-        return getNode(Descriptor.DOG, Dog.class);
+        return getContainer(Descriptor.DOG, Dog.class);
     }
 
     public Collection<Book> getBooks() {
-        return getGroup(Descriptor.BOOK_GRP, Long.class, Book.class);
+        return getGroup(Descriptor.BOOK_GRP, Book.class);
     }
 }

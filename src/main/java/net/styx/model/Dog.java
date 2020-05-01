@@ -3,9 +3,8 @@ package net.styx.model;
 import net.styx.model.meta.Descriptor;
 import net.styx.model.tree.DataContainer;
 import net.styx.model.tree.Leaf;
-import net.styx.model.tree.Node;
 
-public class Dog extends DataContainer implements Node {
+public class Dog extends DataContainer {
 
     public static final Descriptor DESCRIPTOR = Descriptor.DOG;
 

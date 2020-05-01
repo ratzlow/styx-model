@@ -1,8 +1,6 @@
 package net.styx.model;
 
 import net.styx.model.meta.Descriptor;
-import net.styx.model.traverse.Mutation;
-import net.styx.model.traverse.Operation;
 import net.styx.model.tree.*;
 import net.styx.model.tree.leaf.BigDecimalLeaf;
 import net.styx.model.tree.leaf.IntLeaf;
@@ -61,7 +59,7 @@ public class DataContainerTest {
         assertThat(child.isEmpty()).isTrue();
 
         parent.setLeaf(leaf);
-        parent.setNode(child);
+        parent.setContainer(child);
         assertThat(parent.isEmpty()).isTrue();
         assertThat(parent.isChanged()).isFalse();
 
@@ -79,7 +77,7 @@ public class DataContainerTest {
         assertThat(parent.isEmpty()).isFalse();
         assertThat(parent.isChanged()).isTrue();
 
-        DataContainer childContainer = parent.getNode(Descriptor.DOG, DataContainer.class);
+        DataContainer childContainer = parent.getContainer(Descriptor.DOG, DataContainer.class);
         childContainer.getLeaf(Descriptor.NAME).setValueString(null);
         assertThat(parent.isEmpty()).isTrue();
         assertThat(parent.isChanged()).isFalse();
@@ -92,11 +90,11 @@ public class DataContainerTest {
         assertThat(child.isEmpty()).isFalse();
 
         DataContainer parent = new DataContainer(Descriptor.PERSON);
-        parent.setNode(child);
+        parent.setContainer(child);
         assertThat(child.isEmpty()).isFalse();
         assertThat(child.isChanged()).isTrue();
 
-        assertThat(parent.remove(child.getDescriptor()))
+        assertThat(parent.remove(child.getNodeID().getDescriptor()))
                 .as("Discard child component from parent container should signal success")
                 .isTrue();
         assertThat(parent.isEmpty()).isTrue();
@@ -151,11 +149,11 @@ public class DataContainerTest {
 
     @Test
     void groupAddAndClear() {
-        Group books = new Group<>(Descriptor.BOOK_GRP);
 
         DataContainer person = new DataContainer(Descriptor.PERSON);
         assertThat(person.isEmpty()).isTrue();
 
+        Group books = new Group<>(Descriptor.BOOK_GRP);
         person.setGroup(books);
         assertThat(person.isEmpty()).isTrue();
 
@@ -171,11 +169,16 @@ public class DataContainerTest {
 
     @Test
     void groupCommitRollback() {
-        Book firstBook = new Book(1L);
-        Group books = new Group<>(Descriptor.BOOK_GRP, Set.of(firstBook));
+        Book firstBook = new Book(1);
+        Group<?> books = new Group<>(Descriptor.BOOK_GRP, Set.of(firstBook));
+        assertThat(books.isChanged())
+                .as("Group with only empty initial elements cannot have changes!")
+                .isFalse();
+
+        firstBook.setTitle("Life of Brian");
         assertThat(books.isChanged()).isTrue();
 
-        DataContainer person = new DataContainer(Descriptor.PERSON);
+        Container person = new DataContainer(Descriptor.PERSON);
         person.setGroup(books);
         assertThat(books.isChanged()).isTrue();
         assertThat(person.isEmpty()).isFalse();
@@ -185,19 +188,18 @@ public class DataContainerTest {
         assertThat(person.isEmpty()).isFalse();
         assertThat(person.getGroup(Descriptor.BOOK_GRP)).hasSize(1);
 
-        person.getGroup(Descriptor.BOOK_GRP, Long.class, Book.class).add(new Book(2L));
+        person.getGroup(Descriptor.BOOK_GRP, Book.class).add(new Book(2));
         assertThat(person.getGroup(Descriptor.BOOK_GRP)).hasSize(2);
 
         person.rollback();
         assertThat(person.getGroup(Descriptor.BOOK_GRP)).hasSize(1);
-        assertThat(person.getGroup(Descriptor.BOOK_GRP, Long.class, Book.class))
-                .containsExactly(firstBook);
+        assertThat(person.getGroup(Descriptor.BOOK_GRP, Book.class)).containsExactly(firstBook);
         assertThat(person.isChanged()).isFalse();
         assertThat(person.isEmpty()).isFalse();
 
         // add 2nd group and deal with 1 committed and 1 added group
-        Group<Long, Address> addresses = new Group<>(Descriptor.ADDRESS_GRP);
-        addresses.add(new Address(1L));
+        Group<Address> addresses = new Group<>(Descriptor.ADDRESS_GRP);
+        addresses.add(new Address(1));
         person.setGroup(addresses);
         assertThat(person.isChanged()).isTrue();
         assertThat(person.isEmpty()).isFalse();
@@ -210,11 +212,11 @@ public class DataContainerTest {
 
     @Test
     void deleteGroup() {
-        Group<Long, Address> addresses = new Group<>(Descriptor.ADDRESS_GRP);
-        addresses.add(new Address(1L));
+        Group<Address> addresses = new Group<>(Descriptor.ADDRESS_GRP);
+        addresses.add(new Address(1));
 
-        Group<Long, Book> books = new Group<>(Descriptor.BOOK_GRP);
-        books.add(new Book(1L));
+        Group<Book> books = new Group<>(Descriptor.BOOK_GRP);
+        books.add(new Book(1));
 
         DataContainer person = new DataContainer(Descriptor.PERSON);
         person.setGroup(addresses);
@@ -249,15 +251,15 @@ public class DataContainerTest {
 
             personParent = new DataContainer(Descriptor.PERSON);
             personParent.setLeaf(personNameLeaf);
-            personParent.setNode(dogChild);
+            personParent.setContainer(dogChild);
             assertThat(personParent.isChanged()).isTrue();
         }
 
         @Test
         void commitFromEmpty() {
             personParent.commit();
-            assertThat(personParent.getLeaf(personNameLeaf.getDescriptor()).getValueString()).isEqualTo("Pepe");
-            assertThat(personParent.getNode(dogChild.getDescriptor()).getLeaf(Descriptor.AGE).getValueInt()).isEqualTo(11);
+            assertThat(personParent.getLeaf(personNameLeaf.getNodeID().getDescriptor()).getValueString()).isEqualTo("Pepe");
+            assertThat(personParent.getContainer(dogChild.getNodeID().getDescriptor()).getLeaf(Descriptor.AGE).getValueInt()).isEqualTo(11);
 
             assertThat(personParent.isChanged()).isFalse();
             assertThat(dogChild.isChanged()).isFalse();
@@ -278,13 +280,13 @@ public class DataContainerTest {
             assertThat(personNameLeaf.getValueString()).isEqualTo("Joe");
 
             dogChild.getLeaf(Descriptor.AGE).setValueInt(17);
-            assertThat(personParent.getNode(Descriptor.DOG).getLeaf(Descriptor.AGE).getValueInt()).isEqualTo(17);
+            assertThat(personParent.getContainer(Descriptor.DOG).getLeaf(Descriptor.AGE).getValueInt()).isEqualTo(17);
 
             assertThat(personParent.isChanged()).isTrue();
             personParent.rollback();
             assertThat(personParent.isChanged()).as("First rollback causes effect!").isFalse();
             assertThat(personNameLeaf.getValueString()).isEqualTo("Pepe");
-            assertThat(personParent.getNode(Descriptor.DOG).getLeaf(Descriptor.AGE).getValueInt()).isEqualTo(11);
+            assertThat(personParent.getContainer(Descriptor.DOG).getLeaf(Descriptor.AGE).getValueInt()).isEqualTo(11);
 
             personParent.rollback();
             assertThat(personParent.isChanged()).as("Second rollback is idempotent!").isFalse();
@@ -293,8 +295,8 @@ public class DataContainerTest {
         @Test
         void rollbackToEmpty() {
             personParent.rollback();
-            assertThat(personParent.getLeaf(personNameLeaf.getDescriptor()).getValueString()).isNull();
-            assertThat(personParent.getNode(dogChild.getDescriptor()).getLeaf(Descriptor.AGE).getValueInt())
+            assertThat(personParent.getLeaf(personNameLeaf.getNodeID().getDescriptor()).getValueString()).isNull();
+            assertThat(personParent.getContainer(dogChild.getNodeID().getDescriptor()).getLeaf(Descriptor.AGE).getValueInt())
                     .as("Native type cannot be null as default")
                     .isEqualTo(IntLeaf.EMPTY_VAL.getValueInt());
             assertThat(personParent.isChanged()).isFalse();

@@ -1,22 +1,20 @@
 package net.styx.model;
 
 import net.styx.model.meta.Descriptor;
-import net.styx.model.tree.IdentifiableDataContainer;
+import net.styx.model.tree.DataContainer;
 import net.styx.model.tree.Leaf;
-import net.styx.model.tree.leaf.LongLeaf;
 
-public class Book extends IdentifiableDataContainer<Long> {
+public class Book extends DataContainer {
 
     public static final Descriptor DESCRIPTOR = Descriptor.BOOK;
 
     public Book() {
-        this(generateUuidLong());
+        super(DESCRIPTOR);
     }
 
-    public Book(Long id) {
-        super(DESCRIPTOR, new LongLeaf(DESCRIPTOR.getIDKey().orElseThrow(), id, true, true), Leaf::getValueLong);
+    public Book(long id) {
+        super(DESCRIPTOR, id);
     }
-
 
     public String getISBN() {
         return get(Descriptor.ISBN, Leaf::getValueString);

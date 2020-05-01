@@ -3,6 +3,7 @@ package net.styx.model;
 import net.styx.model.meta.Descriptor;
 import net.styx.model.tree.Group;
 import net.styx.model.tree.Stateful;
+import net.styx.model.tree.traverse.ToStringWalker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -10,12 +11,11 @@ import org.junit.jupiter.api.Test;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 public class GroupTest {
 
     private long addressSequence = 0;
-    private Group<Long, Address> addresses;
+    private Group<Address> addresses;
     private Address first, second;
 
     @BeforeEach
@@ -110,7 +110,7 @@ public class GroupTest {
         // add dup elements
         Address hannover = newAddress("Hannover", "Messe 1", 1234);
 
-        Group<Long, Address> group = new Group<>(Descriptor.ADDRESS_GRP);
+        Group<Address> group = new Group<>(Descriptor.ADDRESS_GRP);
         assertThat(group.add(hannover)).isTrue();
         assertThat(group).hasSize(1);
 
@@ -147,64 +147,9 @@ public class GroupTest {
 
     @Test
     void described() {
-        assertThat(new Group<>(Descriptor.ADDRESS_GRP).getDescriptor()).isEqualTo(Descriptor.ADDRESS_GRP);
+        assertThat(new Group<>(Descriptor.ADDRESS_GRP).getNodeID().getDescriptor()).isEqualTo(Descriptor.ADDRESS_GRP);
     }
 
-    @Test
-    void backup() {
-        assertThat(addresses).isEmpty();
-        assertThat(addresses.getInitial()).isEmpty();
-
-        // empty group > nothing to backup
-        assertThat(addresses.getInitial()).isEmpty();
-        addresses.add(first);
-        assertThat(addresses.getInitial()).isEmpty();
-        assertThat(addresses).hasSize(1);
-
-        // initialized with values > track changes
-        Group<Long, Address> primedAddresses = new Group<>(Descriptor.ADDRESS_GRP,
-                List.of(first, second));
-        assertThat(primedAddresses.getInitial()).containsExactlyElementsOf(List.of(first, second));
-        assertThat(primedAddresses).hasSize(2);
-
-        primedAddresses.remove(first);
-        assertThat(primedAddresses.getInitial()).containsExactlyInAnyOrder(first, second);
-        assertThat(primedAddresses).hasSize(1);
-    }
-
-
-    @Test
-    void crudCycle() {
-        Address zurich = newAddress("Zurich", "Bahnhofstr 10", 8001);
-        Address berlin = newAddress("Berlin", "Kastanienallee 87", 10375);
-        Address london = newAddress("London", "Mainstreet 5", 12345);
-        Collection<Address> initial = List.of(zurich, berlin, london);
-
-        Address hamburg = newAddress("Hamburg", "Fischmarkt", 10001);
-
-
-        Group<Long, Address> addressGroup = new Group<>(Descriptor.ADDRESS_GRP, initial);
-        assertThat(addressGroup).containsExactlyElementsOf(initial);
-        assertThat(addressGroup.getInitial()).containsExactlyElementsOf(initial);
-
-        addressGroup.add(hamburg);
-        Collection<Address> workingList = new ArrayList<>(initial);
-        workingList.add(hamburg);
-
-        assertThat(addressGroup.getInitial()).containsExactlyElementsOf(initial);
-        assertThat(addressGroup.getInitial()).hasSize(3);
-        assertThat(addressGroup.getInitial()).allMatch(a -> a != hamburg);
-
-        assertThat(addressGroup).containsExactlyElementsOf(workingList);
-        assertThat(addressGroup).hasSize(initial.size() + 1);
-
-        addressGroup.remove(zurich);
-        workingList.remove(zurich);
-
-        assertThat(addressGroup).containsExactlyElementsOf(workingList);
-        assertThat(addressGroup).hasSize(3);
-        assertThat(addressGroup.getInitial()).containsExactlyElementsOf(initial);
-    }
 
     @Test
     void dirtyCheckOnInit() {
@@ -214,12 +159,12 @@ public class GroupTest {
 
         Address berlin = newAddress("Berlin", "Kastanienstr. 10", 12345);
         assertThat(berlin.isChanged()).isTrue();
-        Group<Long, Address> gr_1 = new Group<>(Descriptor.ADDRESS_GRP, List.of(berlin));
+        Group<Address> gr_1 = new Group<>(Descriptor.ADDRESS_GRP, List.of(berlin));
         assertThat(gr_1.isChanged())
                 .as("Empty group with dirty element is dirty as well!")
                 .isTrue();
 
-        Group<Long, Address> gr_2 = new Group<>(Descriptor.ADDRESS_GRP);
+        Group<Address> gr_2 = new Group<>(Descriptor.ADDRESS_GRP);
         Address paris = newAddress("Paris", "Eifelplatz 1", 2222);
         gr_2.add(paris);
         assertThat(gr_2.isChanged())
@@ -230,7 +175,7 @@ public class GroupTest {
     @DisplayName("Remove() as reverse op to Add() will clear dirty flag")
     @Test
     void dirtyCheckOnAddRemoveOp() {
-        Group<Long, Address> group = new Group<>(Descriptor.ADDRESS_GRP);
+        Group<Address> group = new Group<>(Descriptor.ADDRESS_GRP);
         Address basel = newAddress("Basel", "Rheinufer", 7001);
         group.add(basel);
         assertThat(group.isChanged())
@@ -253,7 +198,7 @@ public class GroupTest {
         assertThat(initial).noneMatch(Stateful::isChanged);
         assertThat(initial).noneMatch(Stateful::isEmpty);
 
-        Group<Long, Address> group = new Group<>(Descriptor.ADDRESS_GRP, initial);
+        Group<Address> group = new Group<>(Descriptor.ADDRESS_GRP, initial);
         assertThat(group.isChanged()).isFalse();
         assertThat(group.isEmpty()).isFalse();
 
@@ -283,7 +228,7 @@ public class GroupTest {
     @Test
     void rollbackToEmpty() {
         Collection<Address> addresses = newAddresses(false);
-        Group<Long, Address> group = new Group<>(Descriptor.ADDRESS_GRP);
+        Group<Address> group = new Group<>(Descriptor.ADDRESS_GRP);
         group.addAll(addresses);
         assertThat(group.isEmpty()).isFalse();
         assertThat(group.isChanged()).isTrue();
@@ -299,7 +244,7 @@ public class GroupTest {
         Collection<Address> addresses = newAddresses(false);
         assertThat(addresses).allMatch(a -> !a.isChanged());
 
-        Group<Long, Address> group = new Group<>(Descriptor.ADDRESS_GRP, addresses);
+        Group<Address> group = new Group<>(Descriptor.ADDRESS_GRP, addresses);
         assertThat(group.isEmpty()).isFalse();
         assertThat(group.isChanged()).isFalse();
 
@@ -334,7 +279,7 @@ public class GroupTest {
         Collection<Address> addresses = newAddresses(true);
         Address first = addresses.iterator().next();
 
-        Group<Long, Address> group = new Group<>(Descriptor.ADDRESS_GRP, addresses);
+        Group<Address> group = new Group<>(Descriptor.ADDRESS_GRP, addresses);
         group.addAll(addresses);
         assertThat(group.isEmpty()).isFalse();
         assertThat(group.isChanged()).isTrue();
@@ -350,7 +295,7 @@ public class GroupTest {
         assertThat(group.size()).isEqualTo(addresses.size() + 1);
 
         Address retrievedFirstAddress = group.stream()
-                .filter(a -> a.getID().equals(first.getID()))
+                .filter(a -> a.getNodeID().equals(first.getNodeID()))
                 .findFirst()
                 .orElseThrow();
         String newCity = UUID.randomUUID().toString();
@@ -370,6 +315,16 @@ public class GroupTest {
         assertThat(group.size()).isEqualTo(addresses.size());
         assertThat(group).doesNotContain(first);
         assertThat(group.isChanged()).isFalse();
+    }
+
+    @Test
+    void toStringWalker() {
+        Group<?> addresses = new Group<>(Descriptor.ADDRESS_GRP, newAddresses(true));
+        ToStringWalker treeWalker = new ToStringWalker();
+        addresses.accept(treeWalker);
+        String msg = treeWalker.get();
+        assertThat(msg).isNotBlank();
+        System.out.println(msg);
     }
 
 

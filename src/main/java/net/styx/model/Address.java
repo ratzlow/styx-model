@@ -1,23 +1,19 @@
 package net.styx.model;
 
 import net.styx.model.meta.Descriptor;
-import net.styx.model.tree.IdentifiableDataContainer;
+import net.styx.model.tree.DataContainer;
 import net.styx.model.tree.Leaf;
-import net.styx.model.tree.leaf.LongLeaf;
 
-public class Address extends IdentifiableDataContainer<Long> {
+public class Address extends DataContainer {
 
     public static final Descriptor DESCRIPTOR = Descriptor.ADDRESS;
 
     public Address() {
-        this(generateUuidLong());
+        super(DESCRIPTOR);
     }
 
-    public Address(Long id) {
-        super(DESCRIPTOR,
-                new LongLeaf(DESCRIPTOR.getIDKey().orElseThrow(), id, true, true),
-                Leaf::getValueLong
-        );
+    public Address(long id) {
+        super(DESCRIPTOR, id);
     }
 
     public String getStreet() {

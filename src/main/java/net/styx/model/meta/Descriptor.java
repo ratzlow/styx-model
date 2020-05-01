@@ -4,70 +4,65 @@ import net.styx.model.*;
 
 import java.math.BigDecimal;
 import java.util.*;
-import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toUnmodifiableSet;
-
-// TODO (FRa) : (FRa): ID should be immutable in certain ctx
 // TODO (FRa) : (FRa): encapsulate techn. Attributes in component? entities with
-// TODO (FRa) : (FRa): ID must have?! version?
-public enum Descriptor {
+// TODO (FRa) : (FRa): can we remove Clazz param?
+public enum Descriptor implements NodeID {
 
     /**
      * default unset value
      */
-    UNDEF(-1, "undefinedNode", DataType.INT, Integer.class),
+    UNDEF(-1, "undefinedNode", NodeType.LEAF, DataType.UNDEF, Integer.class),
 
     // technical fields
-    ID(5, "id", DataType.LONG, Long.class),
-    VERSION(6, "version", DataType.INT, Integer.class),
+    VERSION(6, "version", NodeType.LEAF, DataType.INT, Integer.class),
 
     // business fields fields
-    NAME(10, "name", DataType.STRING, String.class),
-    AGE(11, "age", DataType.INT, Integer.class),
-    INCOME(12, "income", DataType.BIG_DECIMAL, BigDecimal.class),
-    GENDER(13, "gender", DataType.ENUM, Gender.class),
+    NAME(10, "name", NodeType.LEAF, DataType.STRING, String.class),
+    AGE(11, "age", NodeType.LEAF, DataType.INT, Integer.class),
+    INCOME(12, "income", NodeType.LEAF, DataType.BIG_DECIMAL, BigDecimal.class),
+    GENDER(13, "gender", NodeType.LEAF, DataType.ENUM, Gender.class),
 
-    STREET(14, "street", DataType.STRING, String.class),
-    ZIP(15, "zip", DataType.INT, Integer.class),
-    CITY(16, "city", DataType.STRING, String.class),
+    STREET(14, "street", NodeType.LEAF, DataType.STRING, String.class),
+    ZIP(15, "zip", NodeType.LEAF, DataType.INT, Integer.class),
+    CITY(16, "city", NodeType.LEAF, DataType.STRING, String.class),
 
-    ISBN(20, "isbn", DataType.STRING, String.class),
-    TITLE(21, "title", DataType.STRING, String.class),
+    ISBN(20, "isbn", NodeType.LEAF, DataType.STRING, String.class),
+    TITLE(21, "title", NodeType.LEAF, DataType.STRING, String.class),
 
-    SIZE(30, "size", DataType.STRING, Integer.class),
-    COLOR(31, "color", DataType.ENUM, Integer.class),
+    SIZE(30, "size", NodeType.LEAF, DataType.STRING, Integer.class),
+    COLOR(31, "color", NodeType.LEAF, DataType.ENUM, Integer.class),
 
 
     // components
-    DOG(1001, "dog", DataType.COMPONENT, Dog.class,
+    DOG(1001, "dog", NodeType.CONTAINER, DataType.UNDEF, Dog.class,
             Set.of(NAME, AGE)),
 
-    ADDRESS(1002, "address", DataType.COMPONENT, Address.class,
-            Set.of(STREET, ZIP, CITY), ID),
+    ADDRESS(1002, "address", NodeType.CONTAINER, DataType.UNDEF, Address.class,
+            Set.of(STREET, ZIP, CITY)),
 
-    BOOK(1003, "book", DataType.COMPONENT, Book.class,
-            Set.of(ISBN, TITLE), ID),
+    BOOK(1003, "book", NodeType.CONTAINER, DataType.UNDEF, Book.class,
+            Set.of(ISBN, TITLE)),
 
-    SHOE(1004, "shoe", DataType.COMPONENT, Shoe.class,
-            Set.of(ID, SIZE, COLOR)),
+    SHOE(1004, "shoe", NodeType.CONTAINER, DataType.UNDEF, Shoe.class,
+            Set.of(SIZE, COLOR)),
 
     // groups
-    ADDRESS_GRP(2001, "addresses", DataType.GROUP, Collection.class,
+    ADDRESS_GRP(2001, "addresses", NodeType.GROUP, DataType.UNDEF, Collection.class,
             Set.of(ADDRESS)),
 
-    FAMILY_GRP(2002, "familyMembers", DataType.GROUP, Collection.class,
+    FAMILY_GRP(2002, "familyMembers", NodeType.GROUP, DataType.UNDEF, Collection.class,
             new int[]{3001}),
 
-    BOOK_GRP(2003, "books", DataType.GROUP, Collection.class,
+    BOOK_GRP(2003, "books", NodeType.GROUP, DataType.UNDEF, Collection.class,
             Set.of(BOOK)),
 
-    SHOE_GRP(2004, "shoes", DataType.GROUP, Collection.class,
+    SHOE_GRP(2004, "shoes", NodeType.GROUP, DataType.UNDEF, Collection.class,
             Set.of(SHOE)),
 
 
     // domain roots => component
-    PERSON(3001, "person", DataType.COMPONENT, Person.class,
+    PERSON(3001, "person", NodeType.CONTAINER, DataType.UNDEF, Person.class,
             Set.of(NAME, AGE, INCOME, GENDER, DOG, ADDRESS_GRP, BOOK_GRP, FAMILY_GRP));
 
 
@@ -77,44 +72,36 @@ public enum Descriptor {
 
     private final int tagNumber;
     private final String propName;
+    private final NodeType nodeType;
     private final DataType dataType;
     private final Class<?> definingClass;
     private Set<Descriptor> children;
     private int[] childTags = new int[0];
-    private final Optional<Descriptor> idKey;
 
 
     //---------------------------------------------------------------------------
     // constructors
     //---------------------------------------------------------------------------
     // TODO (FRa) : (FRa): consolidate constructors
-    Descriptor(int tagNumber, String propName, DataType type, Class<?> clazz, Set<Descriptor> children) {
+    Descriptor(int tagNumber, String propName, NodeType nodeType, DataType type, Class<?> clazz,
+               Set<Descriptor> children) {
         this.tagNumber = tagNumber;
         this.propName = propName;
         this.dataType = type;
+        this.nodeType = nodeType;
         this.definingClass = clazz;
         this.children = Collections.unmodifiableSet(children);
-        this.idKey = Optional.empty();
     }
 
-    Descriptor(int tagNumber, String propName, DataType type, Class<?> clazz) {
-        this(tagNumber, propName, type, clazz, Collections.emptySet());
+    Descriptor(int tagNumber, String propName, NodeType nodeType, DataType dataType, Class<?> clazz) {
+        this(tagNumber, propName, nodeType, dataType, clazz, Collections.emptySet());
     }
 
-    Descriptor(int tagNumber, String propName, DataType type, Class<?> clazz, int[] childTags) {
-        this(tagNumber, propName, type, clazz);
+    Descriptor(int tagNumber, String propName, NodeType nodeType, DataType dataType, Class<?> clazz, int[] childTags) {
+        this(tagNumber, propName, nodeType, dataType, clazz);
         this.childTags = childTags;
     }
 
-    Descriptor(int tagNumber, String propName, DataType type, Class<?> clazz, Set<Descriptor> children,
-               Descriptor idKey) {
-        this.tagNumber = tagNumber;
-        this.propName = propName;
-        this.dataType = type;
-        this.definingClass = clazz;
-        this.idKey = Optional.ofNullable(idKey);
-        this.children = Stream.concat(children.stream(), this.idKey.stream()).collect(toUnmodifiableSet());
-    }
 
     //---------------------------------------------------------------------------
     // API
@@ -148,6 +135,10 @@ public enum Descriptor {
         return propName;
     }
 
+    public NodeType getNodeType() {
+        return nodeType;
+    }
+
     public DataType getDataType() {
         return dataType;
     }
@@ -164,7 +155,8 @@ public enum Descriptor {
         return definingClass;
     }
 
-    public Optional<Descriptor> getIDKey() {
-        return idKey;
+    @Override
+    public Descriptor getDescriptor() {
+        return this;
     }
 }

@@ -1,6 +1,7 @@
 package net.styx.model.tree.leaf;
 
 import net.styx.model.meta.Descriptor;
+import net.styx.model.meta.NodeID;
 import net.styx.model.tree.Leaf;
 import net.styx.model.tree.MutationControlMixin;
 
@@ -10,24 +11,24 @@ public class IntLeaf implements Leaf {
 
     private static final int EMPTY_VAL_NATIVE = -1;
     private final MutationControlMixin mutationControl = new MutationControlMixin();
-    private final Descriptor descriptor;
+    private final NodeID nodeID;
 
     private int current = EMPTY_VAL_NATIVE;
     private int previous = EMPTY_VAL_NATIVE;
     private boolean changed = false;
 
-    public IntLeaf(Descriptor descriptor) {
-        this(descriptor, EMPTY_VAL_NATIVE);
+    public IntLeaf(NodeID nodeID) {
+        this(nodeID, EMPTY_VAL_NATIVE);
     }
 
-    public IntLeaf(Descriptor descriptor, int value) {
-        this.descriptor = descriptor;
+    public IntLeaf(NodeID nodeID, int value) {
+        this.nodeID = nodeID;
         setValueInt(value);
     }
 
     @Override
-    public Descriptor getDescriptor() {
-        return descriptor;
+    public NodeID getNodeID() {
+        return nodeID;
     }
 
     @Override

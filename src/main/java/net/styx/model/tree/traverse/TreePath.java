@@ -1,8 +1,11 @@
-package net.styx.model.traverse;
+package net.styx.model.tree.traverse;
 
 import net.styx.model.meta.Descriptor;
+import net.styx.model.meta.NodeID;
+import net.styx.model.tree.IdxNodeID;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class TreePath {
@@ -10,9 +13,9 @@ public class TreePath {
 
 
     final Type pathType;
-    final Step[] steps;
+    final NodeID[] steps;
 
-    private TreePath(Type pathType, Step[] steps) {
+    private TreePath(Type pathType, NodeID[] steps) {
         this.pathType = pathType;
         this.steps = steps;
     }
@@ -21,12 +24,12 @@ public class TreePath {
         return pathType;
     }
 
-    public Step[] getSteps() {
+    public NodeID[] getSteps() {
         return steps;
     }
 
     static class Builder {
-        final List<Step> steps = new ArrayList<>();
+        final List<NodeID> steps = new ArrayList<>();
         final Type pathType;
 
         public Builder(Type pathType) {
@@ -41,20 +44,18 @@ public class TreePath {
             return new Builder(Type.ABSOLUTE);
         }
 
-        Builder add(Descriptor ... descriptors) {
-            for (Descriptor descriptor : descriptors) {
-                steps.add(new Step(descriptor));
-            }
+        Builder add(NodeID ... nodeIDs) {
+            steps.addAll(Arrays.asList(nodeIDs));
             return this;
         }
 
-        Builder add(Descriptor descriptor, Object key) {
-            steps.add(new Step(descriptor, key));
+        Builder add(Descriptor descriptor, long idx) {
+            steps.add(new IdxNodeID(descriptor, idx));
             return this;
         }
 
         TreePath build() {
-            return new TreePath(pathType, steps.toArray(new Step[steps.size()]));
+            return new TreePath(pathType, steps.toArray(new NodeID[0]));
         }
     }
 }

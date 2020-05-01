@@ -1,14 +1,10 @@
 package net.styx.model.meta;
 
 public enum DataType {
-    // value types
+    UNDEF,
     INT,
     LONG,
     BIG_DECIMAL,
     STRING,
-    ENUM,
-
-    // components
-    COMPONENT,
-    GROUP
+    ENUM
 }

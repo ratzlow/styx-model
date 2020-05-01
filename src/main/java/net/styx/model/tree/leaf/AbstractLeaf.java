@@ -1,35 +1,35 @@
 package net.styx.model.tree.leaf;
 
-import net.styx.model.meta.Descriptor;
+import net.styx.model.meta.NodeID;
 import net.styx.model.tree.Leaf;
 import net.styx.model.tree.MutationControlMixin;
 
 import java.util.Objects;
 
-// TODO (FRa) : (FRa): minimize copying values by stable orgValue vs. newValue?
+// TODO (FRa) : (FRa): perf: minimize copying values by stable orgValue vs. newValue?
 public abstract class AbstractLeaf<T> implements Leaf {
 
-    private final Descriptor descriptor;
+    private final NodeID nodeID;
     private final MutationControlMixin mutationControl = new MutationControlMixin();
 
     protected T current;
     protected T previous;
     private boolean changed = false;
 
-    protected AbstractLeaf(Descriptor descriptor) {
-        this.descriptor = descriptor;
+    protected AbstractLeaf(NodeID nodeID) {
+        this.nodeID = nodeID;
     }
 
-    protected AbstractLeaf(Descriptor descriptor, T val) {
-        this(descriptor, val, true, false);
+    protected AbstractLeaf(NodeID nodeID, T val) {
+        this(nodeID, val, true, false);
     }
 
-    protected AbstractLeaf(Descriptor descriptor, T val, boolean markDirty) {
-        this(descriptor, val, markDirty, false);
+    protected AbstractLeaf(NodeID nodeID, T val, boolean markDirty) {
+        this(nodeID, val, markDirty, false);
     }
 
-    protected AbstractLeaf(Descriptor descriptor, T val, boolean markDirty, boolean markFrozen) {
-        this.descriptor = descriptor;
+    protected AbstractLeaf(NodeID nodeID, T val, boolean markDirty, boolean markFrozen) {
+        this.nodeID = nodeID;
 
         if (markDirty) {
             setValue(val);
@@ -74,8 +74,8 @@ public abstract class AbstractLeaf<T> implements Leaf {
     protected abstract boolean same(T current, T val);
 
     @Override
-    public Descriptor getDescriptor() {
-        return descriptor;
+    public NodeID getNodeID() {
+        return nodeID;
     }
 
     @Override
@@ -135,19 +135,21 @@ public abstract class AbstractLeaf<T> implements Leaf {
     // Object overrides
     //-------------------------------------------------------------------------------------------------
 
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         AbstractLeaf<?> that = (AbstractLeaf<?>) o;
         return changed == that.changed &&
-                descriptor == that.descriptor &&
+                nodeID.equals(that.nodeID) &&
+                mutationControl.equals(that.mutationControl) &&
                 Objects.equals(current, that.current) &&
                 Objects.equals(previous, that.previous);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(descriptor, current, previous, changed);
+        return Objects.hash(nodeID, mutationControl, current, previous, changed);
     }
 }

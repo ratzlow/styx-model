@@ -1,59 +1,79 @@
 package net.styx.model;
 
 import net.styx.model.meta.Descriptor;
-import net.styx.model.tree.Group;
-import net.styx.model.tree.IdentifiableDataContainer;
-import net.styx.model.tree.Leaf;
-import net.styx.model.tree.leaf.LongLeaf;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
+import net.styx.model.tree.*;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.Collection;
+import java.util.List;
 
-// TODO (FRa) : (FRa): impl useGenericApiRaw()
+import static org.assertj.core.api.Assertions.assertThat;
+
 public class ApiUsageTest {
 
     @Test
     void useSemanticApi() {
         Person person = populate(new Person(), "Frank", 87, Gender.MALE, new BigDecimal("100"));
-        Assertions.assertEquals("Frank", person.getName());
-        Assertions.assertEquals(87, person.getAge());
-        Assertions.assertEquals(Gender.MALE, person.getGender());
-        Assertions.assertEquals(new BigDecimal("100"), person.getIncome());
+        assertThat(person.getName()).isEqualTo("Frank");
+        assertThat(person.getAge()).isEqualTo(87);
+        assertThat(person.getGender()).isEqualTo(Gender.MALE);
+        assertThat(person.getIncome()).isEqualTo(new BigDecimal("100"));
 
         populate(person, "Franziska", 101, Gender.FEMALE, BigDecimal.TEN);
-        Assertions.assertEquals("Franziska", person.getName());
-        Assertions.assertEquals(101, person.getAge());
-        Assertions.assertEquals(Gender.FEMALE, person.getGender());
-        Assertions.assertEquals(BigDecimal.TEN, person.getIncome());
-        Assertions.assertNull(person.getDog());
+        assertThat(person.getName()).isEqualTo("Franziska");
+        assertThat(person.getAge()).isEqualTo(101);
+        assertThat(person.getGender()).isEqualTo(Gender.FEMALE);
+        assertThat(person.getIncome()).isEqualTo(BigDecimal.TEN);
+        assertThat(person.getDog()).isNull();
 
         Dog dog = new Dog();
         dog.setName("Wuffi");
         dog.setAge(3);
         person.setDog(dog);
-        Assertions.assertNotNull(person.getDog());
-        Assertions.assertEquals("Wuffi", person.getDog().getName());
-        Assertions.assertEquals(3, person.getDog().getAge());
+        assertThat(person.getDog()).isNotNull();
+        assertThat(person.getDog().getName()).isEqualTo("Wuffi");
+        assertThat(person.getDog().getAge()).isEqualTo(3);
     }
 
+    @DisplayName("Test type combinations of Group vs. Node!")
     @Test
-    void useGenericApiWithTypes() {
-        Group<Long, IdentifiableDataContainer<Long>> addresses = new Group<>(Descriptor.ADDRESS_GRP);
-        IdentifiableDataContainer<Long> address = new IdentifiableDataContainer<>(
-                Descriptor.ADDRESS,
-                new LongLeaf(Descriptor.ADDRESS.getIDKey().orElseThrow(), 1L, true, true),
-                Leaf::getValueLong
-        );
+    void groupTypingVariations() {
+        Group<Leaf> leafs = new Group<>(Descriptor.ADDRESS_GRP);
+        Group<Container> containers = new Group<>(Descriptor.ADDRESS_GRP);
+        Group<Node> nodes = new Group<>(Descriptor.ADDRESS_GRP);
+        Group<Group<Node>> groups = new Group<>(Descriptor.ADDRESS_GRP, List.of());
+        assertThat(groups).isEmpty();
 
-        addresses.add(address);
 
-        Collection<Address> properTypedAddresses = new Group<>(Descriptor.ADDRESS_GRP);
-        properTypedAddresses.add(new Address(2L));
+        manipulate(containers, new Address());
+        manipulate(nodes, new Address());
+
+        Collection<Container> addresses1 = manipulate(new Group<>(Descriptor.ADDRESS_GRP), new Address());
+        Collection<Address> addresses2 = manipulate(new Group<>(Descriptor.ADDRESS_GRP), new Address());
+        Collection<Node> addresses3 = manipulate(new Group<>(Descriptor.ADDRESS_GRP), new Address());
+
+        Collection<Node> addresses4 =
+                manipulate(new Group<>(Descriptor.ADDRESS_GRP), new DataContainer(Descriptor.ADDRESS));
+
+        assertThat(List.of(addresses1, addresses2, addresses3, addresses4))
+                .allMatch(g -> g.size() == 1);
+
+        Group<?> unboundGroup;
+        Group rawGroup;
+        rawGroup = leafs;
+        unboundGroup = leafs;
+        assertThat(List.of(unboundGroup, rawGroup)).allMatch(Group::isEmpty);
     }
 
+    private <E extends Node> Group<E> manipulate(Group<E> group, E element) {
+        group.add(element);
+        group.remove(element);
+        group.add(element);
+
+        return group;
+    }
 
     private Person populate(Person person, String name, int age, Gender gender, BigDecimal income) {
         person.setName(name);

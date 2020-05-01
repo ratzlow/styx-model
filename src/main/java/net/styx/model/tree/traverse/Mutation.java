@@ -1,12 +1,13 @@
-package net.styx.model.traverse;
+package net.styx.model.tree.traverse;
 
+import net.styx.model.meta.NodeID;
 import net.styx.model.tree.Leaf;
 
 public class Mutation {
     final Operation operation;
     private Leaf leaf;
-    private Step[] fullPath;
-    private Step pathEnd;
+    private NodeID[] fullPath;
+    private NodeID pathEnd;
 
     public Mutation(Operation operation, TreePath path, Leaf leaf) {
         this.leaf = leaf;
@@ -27,21 +28,21 @@ public class Mutation {
         return leaf;
     }
 
-    public Step[] getFullPath() {
+    public NodeID[] getFullPath() {
         return fullPath;
     }
 
-    public Step getPathEnd() {
+    public NodeID getPathEnd() {
         return pathEnd;
     }
 
-    private Step[] calculateFullPath(TreePath path, Leaf leaf) {
-        final Step[] extendedPath;
-        // TODO (FRa) : (FRa): add handling for abs/rela path
+    private NodeID[] calculateFullPath(TreePath path, Leaf leaf) {
+        final NodeID[] extendedPath;
+        // TODO (FRa) : (FRa): add handling for abs/rel path
         if (leaf != null) {
-            extendedPath = new Step[path.getSteps().length + 1];
+            extendedPath = new NodeID[path.getSteps().length + 1];
             System.arraycopy(path.getSteps(), 0, extendedPath, 0, path.getSteps().length);
-            extendedPath[extendedPath.length-1] = new Step(leaf.getDescriptor());
+            extendedPath[extendedPath.length-1] = leaf.getNodeID();
         } else {
             extendedPath = path.getSteps();
         }

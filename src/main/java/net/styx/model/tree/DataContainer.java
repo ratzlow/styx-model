@@ -1,7 +1,8 @@
 package net.styx.model.tree;
 
 import net.styx.model.meta.DataType;
-import net.styx.model.meta.Descriptor;
+import net.styx.model.meta.NodeID;
+import net.styx.model.meta.NodeType;
 import net.styx.model.tree.leaf.*;
 
 import java.util.*;
@@ -9,25 +10,28 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static java.util.Collections.emptyList;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 
 
 /**
  * The addition of an attribute (node/leaf) is only considered as a change if it comes along with
- * an attribute value change. The pure add operation of a clean attribute does not mark the container dirty.
+ * an attribute value change. The pure add operation of a clean attribute does not mark
+ * the container dirty.
+ *
  * <p>
  * // TODO (FRa) : (FRa): add API to discarded empty/unset.
  */
-public class DataContainer implements Node {
+public class DataContainer implements Container {
 
     // TODO (FRa) : (FRa): make sure those leafs are immutable, to avoid side effects
     private static final Map<DataType, Leaf> UNSET_LEAFS = createUnsetLeafs();
-    private static final Map<DataType, Function<Descriptor, Leaf>> LEAF_GENERATORS = createLeafGenerators();
+    private static final Map<DataType, Function<NodeID, Leaf>> LEAF_GENERATORS = createLeafGenerators();
 
-    private final Descriptor descriptor;
-    // TODO (FRa) : (FRa): deep clones needed in current & previous to avoid side effects of manipulation items
-    //  in both containers
+    private final NodeID nodeID;
+    // TODO (FRa) : (FRa): deep clones needed in current & previous to avoid side
+    //  effects of manipulation items in both containers
     private final State current;
     private final State previous;
 
@@ -35,115 +39,107 @@ public class DataContainer implements Node {
     // constructors
     //------------------------------------------------------------------------------
 
-    public DataContainer(Descriptor descriptor) {
-        this(descriptor, Collections.emptyList(), Collections.emptyList());
+    public DataContainer(NodeID nodeID) {
+        this(nodeID, emptyList(), emptyList(), emptyList());
+    }
+
+    public DataContainer(NodeID nodeID, long idx) {
+        this(new IdxNodeID(nodeID.getDescriptor(), idx), emptyList(), emptyList(), emptyList());
     }
 
 
-    public DataContainer(Descriptor descriptor, Collection<Leaf> initialLeafs) {
-        this(descriptor, initialLeafs, Collections.emptySet());
+    public DataContainer(NodeID nodeID, Collection<Leaf> initialLeafs) {
+        this(nodeID, initialLeafs, Collections.emptySet(), emptyList());
     }
 
-
-    public DataContainer(Descriptor descriptor, Collection<Leaf> initialLeafs,
-                         Collection<Node> initialNodes) {
-        this(descriptor, initialLeafs, initialNodes, Collections.emptySet());
+    private DataContainer(NodeID nodeID,
+                          Collection<Leaf> initialLeafs,
+                          Collection<Container> initialContainers,
+                          Collection<Group<?>> initialGroups) {
+        this.nodeID = nodeID;
+        this.previous = State.freeze(initialLeafs, initialContainers, initialGroups);
+        this.current = State.hot(initialLeafs, initialContainers, initialGroups);
     }
 
-
-    public DataContainer(Descriptor descriptor, Collection<Leaf> initialLeafs,
-                         Collection<Node> initialNodes,
-                         Collection<Group<?, ?>> initialGroups) {
-        this.descriptor = descriptor;
-        this.previous = State.freeze(initialLeafs, initialNodes, initialGroups);
-        this.current = State.hot(initialLeafs, initialNodes, initialGroups);
-    }
 
     //------------------------------------------------------------------------------
     // public API
     //------------------------------------------------------------------------------
 
     @Deprecated
-    public <T> T get(Descriptor descriptor, Function<Leaf, T> dispatchGet) {
-        checkRange(descriptor);
-        Leaf leaf = current.leafs.getOrDefault(descriptor, UNSET_LEAFS.get(descriptor.getDataType()));
+    public <T> T get(NodeID nodeID, Function<Leaf, T> dispatchGet) {
+        checkRange(nodeID);
+        Leaf leaf = current.leafs.getOrDefault(nodeID, UNSET_LEAFS.get(nodeID.getDescriptor().getDataType()));
         return dispatchGet.apply(leaf);
     }
 
     @Deprecated
-    public void set(Descriptor descriptor, Consumer<Leaf> dispatchSet) {
-        checkRange(descriptor);
-        Function<Descriptor, Leaf> leafGenerator = LEAF_GENERATORS.get(descriptor.getDataType());
-        Leaf leaf = current.leafs.computeIfAbsent(descriptor, leafGenerator);
+    public void set(NodeID nodeID, Consumer<Leaf> dispatchSet) {
+        checkRange(nodeID);
+        Function<NodeID, Leaf> leafGenerator = LEAF_GENERATORS.get(nodeID.getDescriptor().getDataType());
+        Leaf leaf = current.leafs.computeIfAbsent(nodeID, leafGenerator);
         dispatchSet.accept(leaf);
     }
 
     @Override
-    public void setNode(Node node) {
-        current.nodes.put(node.getDescriptor(), node);
+    public void setContainer(Container container) {
+        current.containers.put(container.getNodeID().getDescriptor(), container);
     }
 
     @Override
-    public <T extends Node> T getNode(Descriptor descriptor, Class<T> clazz) {
-        Node node = getNode(descriptor);
+    public <T extends Container> T getContainer(NodeID nodeID, Class<T> clazz) {
+        Node node = getContainer(nodeID);
         return node != null ? clazz.cast(node) : null;
     }
 
     @Override
-    public boolean remove(Descriptor descriptor) {
-        return current.remove(descriptor);
+    public boolean remove(NodeID nodeID) {
+        return current.remove(nodeID);
     }
 
     @Override
-    public Node getNode(Descriptor descriptor) {
-        checkRange(descriptor);
-        return current.nodes.get(descriptor);
+    public Container getContainer(NodeID nodeID) {
+        checkRange(nodeID);
+        return current.containers.get(nodeID);
     }
 
     @Override
     public void setLeaf(Leaf leaf) {
-        checkRange(leaf.getDescriptor());
-        current.leafs.put(leaf.getDescriptor(), leaf);
+        checkRange(leaf.getNodeID().getDescriptor());
+        current.leafs.put(leaf.getNodeID().getDescriptor(), leaf);
     }
 
     @Override
-    public Leaf getLeaf(Descriptor descriptor) {
-        checkRange(descriptor);
-        return current.leafs.get(descriptor);
+    public Leaf getLeaf(NodeID nodeID) {
+        checkRange(nodeID);
+        return current.leafs.get(nodeID);
     }
 
     @Override
-    public <K, E extends Node & Identifiable<K>> void setGroup(Group<K, E> group) {
-        setGroupRaw(group);
+    public <E extends Node> void setGroup(Group<E> group) {
+        checkRange(group.getNodeID().getDescriptor());
+        current.groups.put(group.getNodeID().getDescriptor(), group);
     }
 
     @Override
-    public void setGroupRaw(Group<?, ?> group) {
-        checkRange(group.getDescriptor());
-        current.groups.put(group.getDescriptor(), group);
+    public <E extends Node> Group<E> getGroup(NodeID nodeID) {
+        return getGroupInternal(nodeID);
     }
 
     @Override
-    public Group<?, ?> getGroup(Descriptor descriptor) {
-        checkRange(descriptor);
-        return current.groups.computeIfAbsent(descriptor, desc -> new Group<>(descriptor));
+    public <E extends Node> Group<E> getGroup(NodeID nodeID, Class<E> elementClazz) {
+        return getGroupInternal(nodeID);
+    }
+
+    private <E extends Node> Group<E> getGroupInternal(NodeID nodeID) {
+        checkRange(nodeID);
+        Group<? extends Node> group = current.groups.computeIfAbsent(nodeID, desc -> new Group<E>(nodeID));
+        return (Group<E>) group;
     }
 
     @Override
-    public <K, E extends Node & Identifiable<K>> Group<K, E> getGroup(Descriptor descriptor,
-                                                                      Class<K> keyClazz,
-                                                                      Class<E> elementClazz) {
-        checkRange(descriptor);
-        Group<?, ? extends Stateful> group =
-                current.groups.computeIfAbsent(descriptor, desc -> new Group<K, E>(descriptor));
-
-        // TODO (FRa) : (FRa): better way to type it?
-        return (Group<K, E>) group;
-    }
-
-    @Override
-    public Descriptor getDescriptor() {
-        return descriptor;
+    public NodeID getNodeID() {
+        return nodeID;
     }
 
     @Override
@@ -168,21 +164,28 @@ public class DataContainer implements Node {
     }
 
     @Override
+    public void accept(TreeWalker treeWalker) {
+        treeWalker.onEnter(this);
+        current.allValues().forEach(e -> e.accept(treeWalker));
+        treeWalker.onExit(nodeID);
+    }
+
+    @Override
     public String toString() {
         return new StringJoiner(", ", DataContainer.class.getSimpleName() + "[", "]")
-                .add("descriptor=" + descriptor)
+                .add("nodeID=" + nodeID)
                 .add("current=" + current)
                 .add("previous=" + previous)
                 .toString();
     }
 
-    //--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
     // internal implementation
     //--------------------------------------------------------------------------------------
 
-    private void checkRange(Descriptor descriptor) {
-        if (!this.descriptor.getChildren().contains(descriptor)) {
-            String msg = String.format("Attribute %s is not defined for %s", descriptor, this.descriptor);
+    private void checkRange(NodeID nodeID) {
+        if (!this.nodeID.getDescriptor().getChildren().contains(nodeID.getDescriptor())) {
+            String msg = String.format("Attribute %s is not defined for %s", nodeID, this.nodeID);
             throw new IllegalArgumentException(msg);
         }
     }
@@ -199,8 +202,8 @@ public class DataContainer implements Node {
     }
 
     // TODO (FRa) : (FRa): inject lookup map
-    private static Map<DataType, Function<Descriptor, Leaf>> createLeafGenerators() {
-        Map<DataType, Function<Descriptor, Leaf>> generators = new EnumMap<>(DataType.class);
+    private static Map<DataType, Function<NodeID, Leaf>> createLeafGenerators() {
+        Map<DataType, Function<NodeID, Leaf>> generators = new EnumMap<>(DataType.class);
         generators.put(DataType.BIG_DECIMAL, BigDecimalLeaf::new);
         generators.put(DataType.INT, IntLeaf::new);
         generators.put(DataType.LONG, LongLeaf::new);
@@ -210,68 +213,65 @@ public class DataContainer implements Node {
     }
 
 
-
     private static class State {
-        private final Map<Descriptor, Leaf> leafs;
-        private final Map<Descriptor, Node> nodes;
-        private final Map<Descriptor, Group<?, ? extends Stateful>> groups;
+        private final Map<NodeID, Leaf> leafs;
+        private final Map<NodeID, Container> containers;
+        private final Map<NodeID, Group<? extends Node>> groups;
 
         //---------------------------------------------------------
         // constructors & factories
         //---------------------------------------------------------
 
-        private State(Map<Descriptor, Leaf> leafs,
-                      Map<Descriptor, Node> nodes,
-                      Map<Descriptor, Group<?, ?>> groups) {
+        private State(Map<NodeID, Leaf> leafs,
+                      Map<NodeID, Container> containers,
+                      Map<NodeID, Group<?>> groups) {
             this.leafs = leafs;
-            this.nodes = nodes;
+            this.containers = containers;
             this.groups = groups;
         }
 
-        static State freeze(Collection<Leaf> leafs, Collection<Node> nodes, Collection<Group<?, ?>> groups) {
+        static State freeze(Collection<Leaf> leafs, Collection<Container> containers, Collection<Group<?>> groups) {
             return new State(
                     Collections.unmodifiableMap(asMap(leafs)),
-                    Collections.unmodifiableMap(asMap(nodes)),
+                    Collections.unmodifiableMap(asMap(containers)),
                     Collections.unmodifiableMap(asMap(groups))
             );
         }
 
-        static State hot(Collection<Leaf> leafs, Collection<Node> nodes, Collection<Group<?, ?>> groups) {
-            return new State(asMap(leafs), asMap(nodes), asMap(groups));
+        static State hot(Collection<Leaf> leafs, Collection<Container> containers, Collection<Group<?>> groups) {
+            return new State(asMap(leafs), asMap(containers), asMap(groups));
         }
 
         //---------------------------------------------------------
         // API
         //---------------------------------------------------------
 
-        Stream<Stateful> allValues() {
+        Stream<Node> allValues() {
             return Stream.of(
                     leafs.values().stream(),
-                    nodes.values().stream(),
+                    containers.values().stream(),
                     groups.values().stream()
             ).flatMap(Function.identity());
         }
 
-        boolean remove(Descriptor descriptor) {
+        boolean remove(NodeID nodeID) {
             // TODO (FRa) : (FRa): use this data structure as primary structure to avoid single maps?
-            Map<DataType, Map<Descriptor, ?>> members = new EnumMap<>(DataType.class);
-            members.put(DataType.COMPONENT, nodes);
-            members.put(DataType.GROUP, groups);
+            Map<NodeType, Map<NodeID, ?>> members = new EnumMap<>(NodeType.class);
+            members.put(NodeType.CONTAINER, containers);
+            members.put(NodeType.GROUP, groups);
 
-            Map<Descriptor, ?> attributeContainer = members.getOrDefault(descriptor.getDataType(), leafs);
-            return attributeContainer.remove(descriptor) != null;
+            Map<NodeID, ?> attributeContainer = members.getOrDefault(nodeID.getDescriptor().getNodeType(), leafs);
+            return attributeContainer.remove(nodeID) != null;
         }
 
         //---------------------------------------------------------
         // impl details
         //---------------------------------------------------------
 
-        private static <T extends Described> Map<Descriptor, T> asMap(Collection<T> describedElements) {
-            return describedElements.stream().collect(
-                    toMap(Described::getDescriptor, identity(),
-                            (existing, replacement) -> existing,
-                            () -> new EnumMap<>(Descriptor.class)
-                    )
+        // TODO (FRa) : (FRa): perf: replace with Enum!?
+        private static <T extends Node> Map<NodeID, T> asMap(Collection<T> nodes) {
+            return nodes.stream().collect(
+                    toMap(Node::getNodeID, identity(), (existing, replacement) -> existing, HashMap::new)
             );
         }
     }

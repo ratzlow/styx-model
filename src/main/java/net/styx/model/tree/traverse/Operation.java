@@ -1,3 +1,3 @@
-package net.styx.model.traverse;
+package net.styx.model.tree.traverse;
 
 public enum Operation { SET, REMOVE }

@@ -1,4 +1,4 @@
-package net.styx.model.traverse;
+package net.styx.model.tree.traverse;
 
 import net.styx.model.meta.Descriptor;
 import net.styx.model.tree.DataContainer;
@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class TreeWalkerTest {
 
+    /*
     private static final TreeWalker WRITER = new TreeWalker();
 
     @DisplayName("Leaf operation on existing container")
@@ -84,11 +85,12 @@ public class TreeWalkerTest {
                     .isNull();
         }
     }
-
-
+*/
+/*
     @DisplayName("Nested container operation on existing container")
     @Nested
     class ShallowContainerOnContainerTest extends AbstractOperationTest {
+
 
         @DisplayName(
                 "[] -> +dog -> [dog];" +
@@ -143,7 +145,7 @@ public class TreeWalkerTest {
         }
     }
 
-
+*/
     /*
 
 
@@ -153,6 +155,7 @@ public class TreeWalkerTest {
     [books(1)] -> -book(2).name -> [books(1)]
     [books(1)] -> +book(3).name -> [books(1,2,3)]
      */
+        /*
     @DisplayName("Nested group operation on existing container")
     @Nested
     class ShallowGroupOnContainerTest extends AbstractOperationTest {
@@ -221,4 +224,6 @@ public class TreeWalkerTest {
         TreePath path = TreePath.Builder.relative().add(descriptors).build();
         return new Mutation(operation, path, leaf);
     }
+
+
 }
