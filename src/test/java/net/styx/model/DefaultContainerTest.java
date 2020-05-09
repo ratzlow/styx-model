@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
+import static net.styx.model.tree.Nodes.anyChanged;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -43,25 +44,41 @@ public class DefaultContainerTest {
         assertThat(leaf.isChanged()).isFalse();
         dc.setLeaf(leaf);
 
-        assertThat(dc.isEmpty()).isTrue();
-        assertThat(dc.isChanged()).isFalse();
+        assertThat(dc.isEmpty()).isFalse();
+        assertThat(dc.isChanged()).isTrue();
     }
+
+
+    @Test
+    void newGroupIsDirtyBeforeCommit() {
+        Group<Container> group = new DefaultGroup<>(Descriptor.ADDRESS_GRP);
+        assertThat(group.isChanged()).as("New empty uncommitted/rollback Group is not dirty").isFalse();
+        group.commit();
+        assertThat(group.isChanged()).as("Committed empty group is clean.").isFalse();
+
+        Container address = new DefaultContainer(Descriptor.ADDRESS);
+        assertThat(address.isChanged()).as("A new empty Container does not count as changed!").isFalse();
+        group.add(address);
+        assertThat(group.isChanged()).as("Added element").isTrue();
+        // TODO (FRa) : (FRa): rollback of newly created element: leave as changed?
+    }
+
 
     @Test
     void isEmtpyWhenAllComponentsAreEmpty() {
         Container parent = new DefaultContainer(Descriptor.PERSON);
         assertThat(parent.isEmpty()).isTrue();
 
-        var leaf = new StringLeaf(Descriptor.NAME);
+        Leaf leaf = new StringLeaf(Descriptor.NAME);
         assertThat(leaf.isEmpty());
 
-        var child = new DefaultContainer(Descriptor.DOG);
+        Container child = new DefaultContainer(Descriptor.DOG);
         assertThat(child.isEmpty()).isTrue();
 
         parent.setLeaf(leaf);
         parent.setContainer(child);
-        assertThat(parent.isEmpty()).isTrue();
-        assertThat(parent.isChanged()).isFalse();
+        assertThat(parent.isEmpty()).isFalse();
+        assertThat(parent.isChanged()).isTrue();
 
         // un/set leaf
         leaf.setValueString("XXX");
@@ -69,8 +86,9 @@ public class DefaultContainerTest {
         assertThat(parent.isChanged()).isTrue();
 
         leaf.setValueString(null);
-        assertThat(parent.isEmpty()).isTrue();
-        assertThat(parent.isChanged()).isFalse();
+        assertThat(leaf.isEmpty()).isTrue();
+        assertThat(parent.isEmpty()).isFalse();
+        assertThat(parent.isChanged()).isTrue();
 
         // un/set data container
         child.setLeaf(new StringLeaf(Descriptor.NAME, "Snoopy"));
@@ -79,8 +97,9 @@ public class DefaultContainerTest {
 
         Container childContainer = parent.getContainer(Descriptor.DOG, DefaultContainer.class);
         childContainer.getLeaf(Descriptor.NAME).setValueString(null);
-        assertThat(parent.isEmpty()).isTrue();
-        assertThat(parent.isChanged()).isFalse();
+        assertThat(childContainer.getLeaf(Descriptor.NAME).isEmpty()).isTrue();
+        assertThat(parent.isEmpty()).isFalse();
+        assertThat(parent.isChanged()).isTrue();
     }
 
     @Test
@@ -115,7 +134,7 @@ public class DefaultContainerTest {
         assertThat(street.isChanged()).isFalse();
 
         Container dc = new DefaultContainer(Descriptor.ADDRESS, Set.of(street));
-        assertThat(dc.isChanged()).isFalse();
+        assertThat(anyChanged(dc)).isTrue();
         assertThat(dc.isEmpty()).isFalse();
 
         assertThat(dc.getLeaf(Descriptor.STREET).getValueString()).isEqualTo("Main");
@@ -134,28 +153,30 @@ public class DefaultContainerTest {
         StringLeaf city = new StringLeaf(Descriptor.CITY);
         assertThat(city.isChanged()).isFalse();
         dc.setLeaf(city);
-        assertThat(dc.isChanged()).isFalse();
+        assertThat(dc.isChanged()).isTrue();
+        assertThat(anyChanged(dc)).isTrue();
 
         //  - if it is dirty -> container is dirty
         dc.setLeaf(Descriptor.CITY, leaf -> leaf.setValueString("Leipzig"));
         assertThat(city.isChanged()).isTrue();
         assertThat(dc.isChanged()).isTrue();
 
+        // TODO (FRa) : (FRa): test dirty container is clean after rm of added attribute
+        // TODO (FRa) : (FRa): make this test part of committed container
         //  reset to previous unset value -> container clean
-        dc.setLeaf(Descriptor.CITY, leaf -> leaf.setValueString(null));
-        assertThat(city.isChanged()).isFalse();
-        assertThat(dc.isChanged()).isFalse();
+//        dc.setLeaf(Descriptor.CITY, leaf -> leaf.setValueString(null));
+  //      assertThat(city.isChanged()).isFalse();
+    //    assertThat(dc.isChanged()).isFalse();
     }
 
     @Test
     void groupAddAndClear() {
-
         Container person = new DefaultContainer(Descriptor.PERSON);
         assertThat(person.isEmpty()).isTrue();
 
         Group books = new DefaultGroup<>(Descriptor.BOOK_GRP);
         person.setGroup(books);
-        assertThat(person.isEmpty()).isTrue();
+        assertThat(person.isEmpty()).isFalse();
 
         Book book = new Book(1L);
         books.add(book);
@@ -163,8 +184,8 @@ public class DefaultContainerTest {
         assertThat(person.isChanged()).isTrue();
 
         books.clear();
-        assertThat(person.isEmpty()).isTrue();
-        assertThat(person.isChanged()).isFalse();
+        assertThat(person.isEmpty()).isFalse();
+        assertThat(person.isChanged()).isTrue();
     }
 
     @Test
@@ -172,8 +193,8 @@ public class DefaultContainerTest {
         Book firstBook = new Book(1);
         Group<?> books = new DefaultGroup<>(Descriptor.BOOK_GRP, Set.of(firstBook));
         assertThat(books.isChanged())
-                .as("Group with only empty initial elements cannot have changes!")
-                .isFalse();
+                .as("New Group with empty initial elements accounts as changed!")
+                .isTrue();
 
         firstBook.setTitle("Life of Brian");
         assertThat(books.isChanged()).isTrue();
@@ -228,7 +249,11 @@ public class DefaultContainerTest {
 
         person.getGroup(Descriptor.BOOK_GRP).clear();
         assertThat(person.getGroup(Descriptor.BOOK_GRP)).isEmpty();
-        assertThat(person.isChanged()).isTrue();
+        assertThat(person.getGroup(Descriptor.BOOK_GRP).isChanged()).isTrue();
+        assertThat(person.isChanged())
+                .as("Root object is not affected by child change").isFalse();
+        assertThat(anyChanged(person))
+                .as("SubTree was changed!").isTrue();
     }
 
 
@@ -282,7 +307,7 @@ public class DefaultContainerTest {
             dogChild.getLeaf(Descriptor.AGE).setValueInt(17);
             assertThat(personParent.getContainer(Descriptor.DOG).getLeaf(Descriptor.AGE).getValueInt()).isEqualTo(17);
 
-            assertThat(personParent.isChanged()).isTrue();
+            assertThat(anyChanged(personParent)).isTrue();
             personParent.rollback();
             assertThat(personParent.isChanged()).as("First rollback causes effect!").isFalse();
             assertThat(personNameLeaf.getValueString()).isEqualTo("Pepe");
@@ -294,16 +319,27 @@ public class DefaultContainerTest {
 
         @Test
         void rollbackToEmpty() {
+            assertThat(personNameLeaf.isChanged()).isTrue();
+            assertThat(anyChanged(personParent)).isTrue();
             personParent.rollback();
-            assertThat(personParent.getLeaf(personNameLeaf.getNodeID().getDescriptor()).getValueString()).isNull();
-            assertThat(personParent.getContainer(dogChild.getNodeID().getDescriptor()).getLeaf(Descriptor.AGE).getValueInt())
-                    .as("Native type cannot be null as default")
-                    .isEqualTo(IntLeaf.EMPTY_VAL.getValueInt());
+            assertThat(anyChanged(personParent)).isFalse();
+            assertThat(personNameLeaf.isChanged())
+                    .as("Rollback disjoints newly added Nodes and does not rollback those.").isTrue();
+
+            assertThat(personParent.getLeaf(personNameLeaf.getNodeID()).getValueString()).isNull();
+            Container dog = personParent.getContainer(dogChild.getNodeID());
+            assertThat(dog).as("Added container is discarded").isNull();
+
+            Leaf dogAge = dogChild.getLeaf(Descriptor.AGE);
+            assertThat(dogAge.getValueInt())
+                    .as("Disjoint Container tree is not affected by rollback mutation on root node")
+                    .isNotEqualTo(IntLeaf.EMPTY_VAL.getValueInt());
+
             assertThat(personParent.isChanged()).isFalse();
-            assertThat(dogChild.isChanged()).isFalse();
-            assertThat(personNameLeaf.isChanged()).isFalse();
-            assertThat(personParent.isEmpty()).as("New values are discarded from model! " +
-                    "Even though wrapper classes are preserved so far!").isTrue();
+            assertThat(anyChanged(personParent)).isFalse();
+
+            assertThat(personParent.isEmpty())
+                    .as("Rollback removed old values").isTrue();
         }
 
         /*

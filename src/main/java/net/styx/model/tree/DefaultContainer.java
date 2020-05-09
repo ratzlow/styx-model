@@ -2,7 +2,6 @@ package net.styx.model.tree;
 
 import net.styx.model.meta.DataType;
 import net.styx.model.meta.NodeID;
-import net.styx.model.meta.NodeType;
 import net.styx.model.tree.leaf.*;
 
 import java.util.*;
@@ -11,7 +10,6 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.util.Collections.emptyList;
-import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 
 
@@ -30,10 +28,8 @@ public class DefaultContainer implements Container {
     private static final Map<DataType, Function<NodeID, Leaf>> LEAF_GENERATORS = createLeafGenerators();
 
     private final NodeID nodeID;
-    // TODO (FRa) : (FRa): deep clones needed in current & previous to avoid side
-    //  effects of manipulation items in both containers
-    private final State current;
-    private final State previous;
+    private final MapStore<Node> store;
+
 
     //------------------------------------------------------------------------------
     // constructors
@@ -47,7 +43,6 @@ public class DefaultContainer implements Container {
         this(new IdxNodeID(nodeID.getDescriptor(), idx), emptyList(), emptyList(), emptyList());
     }
 
-
     public DefaultContainer(NodeID nodeID, Collection<Leaf> initialLeafs) {
         this(nodeID, initialLeafs, Collections.emptySet(), emptyList());
     }
@@ -57,8 +52,13 @@ public class DefaultContainer implements Container {
                              Collection<Container> initialContainers,
                              Collection<Group<?>> initialGroups) {
         this.nodeID = nodeID;
-        this.previous = State.freeze(initialLeafs, initialContainers, initialGroups);
-        this.current = State.hot(initialLeafs, initialContainers, initialGroups);
+
+
+        Map<NodeID, Node> allNodes = Stream.of(initialLeafs, initialContainers, initialGroups)
+                .flatMap(Collection::stream)
+                .collect(toMap(Node::getNodeID, Function.identity(),
+                        (existing, replacement) -> existing, HashMap::new));
+        this.store = new MapStore<>(allNodes);
     }
 
 
@@ -69,56 +69,72 @@ public class DefaultContainer implements Container {
 
     @Deprecated
     public <T> T get(NodeID nodeID, Function<Leaf, T> dispatchGet) {
-        checkRange(nodeID);
-        Leaf leaf = current.leafs.getOrDefault(nodeID, UNSET_LEAFS.get(nodeID.getDescriptor().getDataType()));
+        memberCheck(nodeID);
+        final Leaf leaf;
+        if (store.getLive().containsKey(nodeID)) {
+            leaf = asLeaf(store.getLive().get(nodeID));
+        } else {
+            // TODO (FRa) : (FRa): return immutable default value leaf
+            leaf = UNSET_LEAFS.get(nodeID.getDescriptor().getDataType());
+        }
+
         return dispatchGet.apply(leaf);
     }
 
+    /**
+     * Create leaf on the fly if none exists and apply setter to set new value on it.
+     *
+     * @param nodeID      of leaf
+     * @param dispatchSet type matching setter
+     */
     public void setLeaf(NodeID nodeID, Consumer<Leaf> dispatchSet) {
-        checkRange(nodeID);
+        memberCheck(nodeID);
+        store.checkBackup();
         Function<NodeID, Leaf> leafGenerator = LEAF_GENERATORS.get(nodeID.getDescriptor().getDataType());
-        Leaf leaf = current.leafs.computeIfAbsent(nodeID, leafGenerator);
-        dispatchSet.accept(leaf);
+        Node node = store.getLive().computeIfAbsent(nodeID, leafGenerator);
+        dispatchSet.accept(asLeaf(node));
+    }
+
+    @Override
+    public void setLeaf(Leaf leaf) {
+        memberCheck(leaf.getNodeID());
+        store.checkBackup();
+        store.getLive().put(leaf.getNodeID(), leaf);
+    }
+
+    @Override
+    public Leaf getLeaf(NodeID nodeID) {
+        memberCheck(nodeID);
+        DataType dataType = nodeID.getDescriptor().getDataType();
+        return asLeaf(store.getLive().getOrDefault(nodeID, UNSET_LEAFS.get(dataType)));
     }
 
     @Override
     public void setContainer(Container container) {
-        current.containers.put(container.getNodeID().getDescriptor(), container);
+        memberCheck(container.getNodeID());
+        store.checkBackup();
+        store.getLive().put(container.getNodeID(), container);
     }
 
     @Override
     public <T extends Container> T getContainer(NodeID nodeID, Class<T> clazz) {
+        memberCheck(nodeID);
         Node node = getContainer(nodeID);
         return node != null ? clazz.cast(node) : null;
     }
 
     @Override
-    public boolean remove(NodeID nodeID) {
-        return current.remove(nodeID);
-    }
-
-    @Override
     public Container getContainer(NodeID nodeID) {
-        checkRange(nodeID);
-        return current.containers.get(nodeID);
-    }
-
-    @Override
-    public void setLeaf(Leaf leaf) {
-        checkRange(leaf.getNodeID().getDescriptor());
-        current.leafs.put(leaf.getNodeID().getDescriptor(), leaf);
-    }
-
-    @Override
-    public Leaf getLeaf(NodeID nodeID) {
-        checkRange(nodeID);
-        return current.leafs.get(nodeID);
+        memberCheck(nodeID);
+        Node node = store.getLive().get(nodeID);
+        return asContainer(node);
     }
 
     @Override
     public <E extends Node> void setGroup(Group<E> group) {
-        checkRange(group.getNodeID().getDescriptor());
-        current.groups.put(group.getNodeID().getDescriptor(), group);
+        memberCheck(group.getNodeID());
+        store.checkBackup();
+        store.getLive().put(group.getNodeID(), group);
     }
 
     @Override
@@ -132,9 +148,14 @@ public class DefaultContainer implements Container {
     }
 
     private <E extends Node> Group<E> getGroupInternal(NodeID nodeID) {
-        checkRange(nodeID);
-        Group<? extends Node> group = current.groups.computeIfAbsent(nodeID, desc -> new DefaultGroup<E>(nodeID));
-        return (Group<E>) group;
+        memberCheck(nodeID);
+        Node group = store.getLive().get(nodeID);
+        return asGroup(group);
+    }
+
+    @Override
+    public boolean remove(NodeID nodeID) {
+        return store.remove(nodeID);
     }
 
     @Override
@@ -144,29 +165,32 @@ public class DefaultContainer implements Container {
 
     @Override
     public boolean isEmpty() {
-        return current.allValues().allMatch(Stateful::isEmpty);
+        return store.isEmpty();
     }
 
     @Override
     public boolean isChanged() {
-        return current.allValues().anyMatch(Stateful::isChanged);
+        return store.isChanged();
     }
 
     @Override
     public void commit() {
-        current.allValues().forEach(Stateful::commit);
+        store.commit();
     }
 
     @Override
     public void rollback() {
-        // revert all items to apply contract to tree
-        current.allValues().forEach(Stateful::rollback);
+        store.rollback();
     }
 
     @Override
     public void accept(TreeWalker treeWalker) {
         treeWalker.onEnter(this);
-        current.allValues().forEach(e -> e.accept(treeWalker));
+        // TODO (FRa) : (FRa): centralize the iteration?
+        Collection<Node> nodes = store.getLive().values();
+        for (Iterator<Node> iter = nodes.iterator(); iter.hasNext() && treeWalker.proceed(); ) {
+            iter.next().accept(treeWalker);
+        }
         treeWalker.onExit(nodeID);
     }
 
@@ -174,16 +198,15 @@ public class DefaultContainer implements Container {
     public String toString() {
         return new StringJoiner(", ", DefaultContainer.class.getSimpleName() + "[", "]")
                 .add("nodeID=" + nodeID)
-                .add("current=" + current)
-                .add("previous=" + previous)
+                .add("store.live=" + store.getLive())
                 .toString();
     }
 
-//--------------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------------------
     // internal implementation
     //--------------------------------------------------------------------------------------
 
-    private void checkRange(NodeID nodeID) {
+    private void memberCheck(NodeID nodeID) {
         if (!this.nodeID.getDescriptor().getChildren().contains(nodeID.getDescriptor())) {
             String msg = String.format("Attribute %s is not defined for %s", nodeID, this.nodeID);
             throw new IllegalArgumentException(msg);
@@ -212,67 +235,15 @@ public class DefaultContainer implements Container {
         return generators;
     }
 
+    private Leaf asLeaf(Node node) {
+        return node != null ? (Leaf) node : null;
+    }
 
-    private static class State {
-        private final Map<NodeID, Leaf> leafs;
-        private final Map<NodeID, Container> containers;
-        private final Map<NodeID, Group<? extends Node>> groups;
+    private Container asContainer(Node node) {
+        return node != null ? (Container) node : null;
+    }
 
-        //---------------------------------------------------------
-        // constructors & factories
-        //---------------------------------------------------------
-
-        private State(Map<NodeID, Leaf> leafs,
-                      Map<NodeID, Container> containers,
-                      Map<NodeID, Group<?>> groups) {
-            this.leafs = leafs;
-            this.containers = containers;
-            this.groups = groups;
-        }
-
-        static State freeze(Collection<Leaf> leafs, Collection<Container> containers, Collection<Group<?>> groups) {
-            return new State(
-                    Collections.unmodifiableMap(asMap(leafs)),
-                    Collections.unmodifiableMap(asMap(containers)),
-                    Collections.unmodifiableMap(asMap(groups))
-            );
-        }
-
-        static State hot(Collection<Leaf> leafs, Collection<Container> containers, Collection<Group<?>> groups) {
-            return new State(asMap(leafs), asMap(containers), asMap(groups));
-        }
-
-        //---------------------------------------------------------
-        // API
-        //---------------------------------------------------------
-
-        Stream<Node> allValues() {
-            return Stream.of(
-                    leafs.values().stream(),
-                    containers.values().stream(),
-                    groups.values().stream()
-            ).flatMap(Function.identity());
-        }
-
-        boolean remove(NodeID nodeID) {
-            // TODO (FRa) : (FRa): use this data structure as primary structure to avoid single maps?
-            Map<NodeType, Map<NodeID, ?>> members = new EnumMap<>(NodeType.class);
-            members.put(NodeType.CONTAINER, containers);
-            members.put(NodeType.GROUP, groups);
-
-            Map<NodeID, ?> attributeContainer = members.getOrDefault(nodeID.getDescriptor().getNodeType(), leafs);
-            return attributeContainer.remove(nodeID) != null;
-        }
-
-        //---------------------------------------------------------
-        // impl details
-        //---------------------------------------------------------
-
-        // TODO (FRa) : (FRa): perf: replace with Enum!?
-        private static <T extends Node> Map<NodeID, T> asMap(Collection<T> nodes) {
-            return nodes.stream().collect(
-                    toMap(Node::getNodeID, identity(), (existing, replacement) -> existing, HashMap::new)
-            );
-        }
+    private <E extends Node> Group<E> asGroup(Node node) {
+        return node != null ? Group.class.cast(node) : null;
     }
 }

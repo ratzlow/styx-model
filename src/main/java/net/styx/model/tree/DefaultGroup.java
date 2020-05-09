@@ -12,8 +12,6 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toSet;
 
-// TODO (FRa) : (FRa): perf: try to avoid garbage for rollback by just dealing with dirty, added, missing objects
-// TODO (FRa) : (FRa): diff check effectively different, same no elements, same instances of elements, change of instance
 
 /**
  * No duplicates are allowed since every element needs to be identifiable by unique ID.
@@ -26,12 +24,7 @@ public class DefaultGroup<E extends Node> implements Group<E> {
     private final NodeID nodeID;
     private final Supplier<Map<NodeID, E>> generator;
 
-    /**
-     * Elements are mutable but will remain in collection. Access to previous element state
-     * possible available via Node API
-     */
-    private Map<NodeID, E> backup;
-    private final Map<NodeID, E> col;
+    private final MapStore<E> store;
 
     //------------------------------------------------------------------
     // constructors
@@ -45,15 +38,15 @@ public class DefaultGroup<E extends Node> implements Group<E> {
         this(nodeID, generator, Collections.emptyList());
     }
 
-    public DefaultGroup(NodeID nodeID, Collection<E> col) {
-        this(nodeID, LinkedHashMap::new, col);
+    public DefaultGroup(NodeID nodeID, Collection<E> live) {
+        this(nodeID, LinkedHashMap::new, live);
     }
 
     public DefaultGroup(NodeID nodeID, Supplier<Map<NodeID, E>> generator,
-                        Collection<E> col) {
+                        Collection<E> live) {
         this.nodeID = nodeID;
         this.generator = generator;
-        this.col = toMap(col);
+        this.store = new MapStore<>(toMap(live));
     }
 
     //------------------------------------------------------------------
@@ -62,7 +55,7 @@ public class DefaultGroup<E extends Node> implements Group<E> {
 
     @Override
     public int size() {
-        return col.size();
+        return store.getLive().size();
     }
 
     /**
@@ -70,59 +63,57 @@ public class DefaultGroup<E extends Node> implements Group<E> {
      */
     @Override
     public boolean isEmpty() {
-        return col.isEmpty();
+        return store.getLive().isEmpty();
     }
 
     @Override
     public boolean contains(Object o) {
-        return col.containsValue(typeCheck(o));
+        return store.getLive().containsValue(typeCheck(o));
     }
 
     @Override
     public Iterator<E> iterator() {
-        return col.values().iterator();
+        return store.getLive().values().iterator();
     }
 
     @Override
     public Object[] toArray() {
-        return col.values().toArray();
+        return store.getLive().values().toArray();
     }
 
     @Override
     public <T> T[] toArray(T[] array) {
-        return col.values().toArray(array);
+        return store.getLive().values().toArray(array);
     }
 
     @Override
     public boolean add(E element) {
-        checkBackup();
+        store.checkBackup();
         NodeID key = element.getNodeID();
         Objects.requireNonNull(key, () -> "No key assigned to node! " + element);
-        E prev = col.put(key, element);
+        E prev = store.getLive().put(key, element);
         return !Objects.equals(prev, element);
     }
 
     @Override
     public boolean remove(Object element) {
-        checkBackup();
         E value = typeCheck(element);
         NodeID key = value.getNodeID();
-        E previousValue = col.remove(key);
-        return previousValue != null;
+        return store.remove(key);
     }
 
     @Override
     public boolean containsAll(Collection<?> c) {
-        return col.values().containsAll(c);
+        return store.getLive().values().containsAll(c);
     }
 
     @Override
     public boolean addAll(Collection<? extends E> c) {
-        checkBackup();
+        store.checkBackup();
         boolean changed = false;
         for (E e : c) {
             NodeID key = e.getNodeID();
-            E prev = col.put(key, e);
+            E prev = store.getLive().put(key, e);
             changed = !Objects.equals(prev, e) || changed;
         }
         return changed;
@@ -130,11 +121,11 @@ public class DefaultGroup<E extends Node> implements Group<E> {
 
     @Override
     public boolean removeAll(Collection<?> c) {
-        checkBackup();
+        store.checkBackup();
         boolean changed = false;
         for (Object o : c) {
             E elem = typeCheck(o);
-            E prev = col.remove(elem.getNodeID());
+            E prev = store.getLive().remove(elem.getNodeID());
             changed = prev != null || changed;
         }
         return changed;
@@ -146,17 +137,16 @@ public class DefaultGroup<E extends Node> implements Group<E> {
         Set<NodeID> keysToRetain = c.stream()
                 .map(e -> typeCheck(e).getNodeID())
                 .collect(toSet());
-        Set<NodeID> keysToRemove = new HashSet<>(col.keySet());
+        Set<NodeID> keysToRemove = new HashSet<>(store.getLive().keySet());
         keysToRemove.removeAll(keysToRetain);
 
         return removeElements(keysToRemove);
     }
 
-
     @Override
     public void clear() {
-        checkBackup();
-        col.clear();
+        store.checkBackup();
+        store.getLive().clear();
     }
 
     //--------------------------------------------------------------------------------------
@@ -165,12 +155,12 @@ public class DefaultGroup<E extends Node> implements Group<E> {
 
     @Override
     public <T> T[] toArray(IntFunction<T[]> generator) {
-        return col.values().toArray(generator);
+        return store.getLive().values().toArray(generator);
     }
 
     @Override
     public boolean removeIf(Predicate<? super E> filter) {
-        Set<NodeID> keysToRemove = col.values().stream()
+        Set<NodeID> keysToRemove = store.getLive().values().stream()
                 .filter(filter)
                 .map(Node::getNodeID)
                 .collect(toSet());
@@ -181,22 +171,22 @@ public class DefaultGroup<E extends Node> implements Group<E> {
 
     @Override
     public Spliterator<E> spliterator() {
-        return col.values().spliterator();
+        return store.getLive().values().spliterator();
     }
 
     @Override
     public Stream<E> stream() {
-        return col.values().stream();
+        return store.getLive().values().stream();
     }
 
     @Override
     public Stream<E> parallelStream() {
-        return col.values().parallelStream();
+        return store.getLive().values().parallelStream();
     }
 
     @Override
     public void forEach(Consumer<? super E> action) {
-        col.forEach((key, value) -> action.accept(value));
+        store.getLive().forEach((key, value) -> action.accept(value));
     }
 
     //------------------------------------------------------------------
@@ -209,37 +199,27 @@ public class DefaultGroup<E extends Node> implements Group<E> {
         return nodeID;
     }
 
-    /**
-     * @implNote order of checks matter!
-     */
     @Override
     public boolean isChanged() {
-        if (backup != null && !col.keySet().equals(backup.keySet())) return true;
-
-        return col.values().stream().anyMatch(Stateful::isChanged);
+        return store.isChanged();
     }
 
     @Override
     public void commit() {
-        col.values().forEach(Stateful::commit);
-        backup = null;
+        store.commit();
     }
 
     @Override
     public void rollback() {
-        // ensure the same elements are restored
-        if (backup != null) {
-            col.clear();
-            col.putAll(backup);
-            backup = null;
-        }
-        col.values().forEach(Stateful::rollback);
+        store.rollback();
     }
 
     @Override
     public void accept(TreeWalker treeWalker) {
         treeWalker.onEnter(this);
-        col.values().forEach(e -> e.accept(treeWalker));
+        for (Iterator<E> iter = store.getLive().values().iterator(); iter.hasNext() && treeWalker.proceed(); ) {
+            iter.next().accept(treeWalker);
+        }
         treeWalker.onExit(getNodeID());
     }
 
@@ -249,21 +229,13 @@ public class DefaultGroup<E extends Node> implements Group<E> {
 
     private boolean removeElements(Set<NodeID> keysToRemove) {
         if (!keysToRemove.isEmpty()) {
-            checkBackup();
+            store.checkBackup();
         }
 
         for (NodeID removalKey : keysToRemove) {
-            col.remove(removalKey);
+            store.getLive().remove(removalKey);
         }
         return !keysToRemove.isEmpty();
-    }
-
-    private void checkBackup() {
-        if (backup == null) {
-            Map<NodeID, E> temp = generator.get();
-            temp.putAll(col);
-            backup = Map.copyOf(temp);
-        }
     }
 
     private Map<NodeID, E> toMap(Collection<E> c) {
@@ -274,6 +246,7 @@ public class DefaultGroup<E extends Node> implements Group<E> {
         return temp;
     }
 
+    // TODO (FRa) : (FRa): perf
     private E typeCheck(Object element) {
         if (element == null) {
             throw new NullPointerException("Element must not be null!");

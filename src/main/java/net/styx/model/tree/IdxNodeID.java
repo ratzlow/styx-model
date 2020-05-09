@@ -4,6 +4,7 @@ import net.styx.model.meta.Descriptor;
 import net.styx.model.meta.NodeID;
 
 import java.util.Objects;
+import java.util.StringJoiner;
 
 public class IdxNodeID implements NodeID {
     private final Descriptor descriptor;
@@ -35,5 +36,13 @@ public class IdxNodeID implements NodeID {
     @Override
     public int hashCode() {
         return Objects.hash(descriptor, idx);
+    }
+
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", IdxNodeID.class.getSimpleName() + "[", "]")
+                .add("descriptor=" + descriptor)
+                .add("idx=" + idx)
+                .toString();
     }
 }

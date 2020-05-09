@@ -1,8 +1,7 @@
 package net.styx.model;
 
 import net.styx.model.meta.Descriptor;
-import net.styx.model.tree.DefaultGroup;
-import net.styx.model.tree.Stateful;
+import net.styx.model.tree.*;
 import net.styx.model.tree.traverse.ToStringWalker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -10,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
+import static net.styx.model.tree.Nodes.anyChanged;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class DefaultGroupTest {
@@ -160,7 +160,7 @@ public class DefaultGroupTest {
         Address berlin = newAddress("Berlin", "Kastanienstr. 10", 12345);
         assertThat(berlin.isChanged()).isTrue();
         DefaultGroup<Address> gr_1 = new DefaultGroup<>(Descriptor.ADDRESS_GRP, List.of(berlin));
-        assertThat(gr_1.isChanged())
+        assertThat(anyChanged(gr_1))
                 .as("Empty group with dirty element is dirty as well!")
                 .isTrue();
 
@@ -198,9 +198,10 @@ public class DefaultGroupTest {
         assertThat(initial).noneMatch(Stateful::isChanged);
         assertThat(initial).noneMatch(Stateful::isEmpty);
 
-        DefaultGroup<Address> group = new DefaultGroup<>(Descriptor.ADDRESS_GRP, initial);
-        assertThat(group.isChanged()).isFalse();
+        Group<Address> group = new DefaultGroup<>(Descriptor.ADDRESS_GRP, initial);
         assertThat(group.isEmpty()).isFalse();
+        assertThat(group.isChanged()).as("Group was not yet committed").isTrue();
+        assertThat(anyChanged(group)).isTrue();
 
         group.clear();
         assertThat(group).isEmpty();
@@ -218,12 +219,50 @@ public class DefaultGroupTest {
         group.addAll(moreSimilarAddresses);
         assertThat(group.isChanged()).as("Elements look the same but have different IDs").isTrue();
 
-
-        // even if initial and col are equal they can be dirty!!!
-        // nodes can have same dirty props!
-
-        // rm element from clean group -> dirty
+        // TODO (FRa) : (FRa): tests side effect of iterator.next
     }
+
+    @Test
+    void rollbackAfterRemove() {
+        Collection<Address> col = newAddresses(false);
+        Group<Address> group = new DefaultGroup<>(Descriptor.ADDRESS_GRP, col);
+        group.commit();
+        assertThat(anyChanged(group)).isFalse();
+
+        Address firstAddress = group.iterator().next();
+        group.remove(firstAddress);
+        assertThat(anyChanged(group)).isTrue();
+
+        group.rollback();
+        assertThat(anyChanged(group)).isFalse();
+    }
+
+
+    @Test
+    void dirtyCheckOnInlineChange() {
+        Collection<Address> col = newAddresses(false);
+        Group<Address> group = new DefaultGroup<>(Descriptor.ADDRESS_GRP, col);
+
+        assertThat(anyChanged(group.toArray(new Node[0]))).isFalse();
+        assertThat(group.isChanged()).isTrue();
+        assertThat(anyChanged(group)).isTrue();
+
+        group.commit();
+        assertThat(anyChanged(group)).isFalse();
+        Address address = newAddress("SinCity", "MainStr", 12345);
+        group.add(address);
+        assertThat(group.contains(address)).isTrue();
+        assertThat(anyChanged(group)).isTrue();
+
+        group.remove(address);
+        assertThat(anyChanged(group)).isFalse();
+
+        Address firstAddress = group.iterator().next();
+        firstAddress.setCity("SinCity");
+        assertThat(anyChanged(group)).isTrue();
+        assertThat(group.isChanged()).isFalse();
+    }
+
 
     @Test
     void rollbackToEmpty() {
@@ -244,9 +283,9 @@ public class DefaultGroupTest {
         Collection<Address> addresses = newAddresses(false);
         assertThat(addresses).allMatch(a -> !a.isChanged());
 
-        DefaultGroup<Address> group = new DefaultGroup<>(Descriptor.ADDRESS_GRP, addresses);
+        Group<Address> group = new DefaultGroup<>(Descriptor.ADDRESS_GRP, addresses);
         assertThat(group.isEmpty()).isFalse();
-        assertThat(group.isChanged()).isFalse();
+        assertThat(group.isChanged()).as("Unchanged elements in new Group").isTrue();
 
         group.iterator().next().setCity(UUID.randomUUID().toString());
         assertThat(group.isChanged()).isTrue();
@@ -277,17 +316,22 @@ public class DefaultGroupTest {
     @Test
     void commitMultipleTimesToEmpty() {
         Collection<Address> addresses = newAddresses(true);
+        assertThat(addresses).allMatch(Stateful::isChanged);
+
         Address first = addresses.iterator().next();
 
-        DefaultGroup<Address> group = new DefaultGroup<>(Descriptor.ADDRESS_GRP, addresses);
+        Group<Address> group = new DefaultGroup<>(Descriptor.ADDRESS_GRP, addresses);
         group.addAll(addresses);
         assertThat(group.isEmpty()).isFalse();
-        assertThat(group.isChanged()).isTrue();
+        assertThat(group.isChanged())
+                .as("Adding same elements (by key) to collection must not change it!")
+                .isFalse();
 
         group.commit();
-        assertThat(addresses).allMatch(a -> !a.isChanged());
-        assertThat(group.isEmpty()).isFalse();
         assertThat(group.isChanged()).isFalse();
+        assertThat(group.isEmpty()).isFalse();
+
+        assertThat(addresses).allMatch(a -> !anyChanged(a));
 
         Address addedAddress = newAddress("Frankfurt", "Bahnhofstr.1", 222);
         group.add(addedAddress);
