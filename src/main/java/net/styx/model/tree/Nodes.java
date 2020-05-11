@@ -1,7 +1,6 @@
 package net.styx.model.tree;
 
-import net.styx.model.tree.traverse.IsAllEmptyWalker;
-import net.styx.model.tree.traverse.IsAnyChangedWalker;
+import net.styx.model.tree.traverse.*;
 
 public final class Nodes {
 
@@ -23,6 +22,17 @@ public final class Nodes {
         return treeWalker.proceed();
     }
 
+    public static Leaf freeze(Leaf leaf) {
+        return new ImmutableLeaf(leaf);
+    }
+
+    public static Container freeze(Container container) {
+        return new ImmutableContainer(container);
+    }
+
+    public static <E extends Node> Group<E> freeze(Group<E> group) {
+        return new ImmutableGroup<>(group);
+    }
 
     private static <T extends TreeWalker> T forEach(Node[] nodes, T treeWalker) {
         for (int i = 0; i < nodes.length && treeWalker.proceed(); i++) {

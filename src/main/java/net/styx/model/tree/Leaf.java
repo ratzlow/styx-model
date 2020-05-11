@@ -1,10 +1,9 @@
 package net.styx.model.tree;
 
 import java.math.BigDecimal;
-import java.util.function.Predicate;
 
 // TODO (FRa) : (FRa): every leaf should have a strict immutable sharable default instance
-public interface Leaf extends Node, MutationControl {
+public interface Leaf extends Node {
 
     default void setValueString(String value) {
         throw new UnsupportedOperationException(getNodeID().getDescriptor().toString());

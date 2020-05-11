@@ -28,8 +28,8 @@ public class LongLeaf extends AbstractLeaf<Long> {
         setValue(val);
     }
 
-    public LongLeaf(NodeID nodeID, Long val, boolean markDirty, boolean markFrozen) {
-        super(nodeID, val, markDirty, markFrozen);
+    public LongLeaf(NodeID nodeID, Long val, boolean markDirty) {
+        super(nodeID, val, markDirty);
     }
 
     //----------------------------------------------------------------------

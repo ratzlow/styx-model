@@ -3,14 +3,12 @@ package net.styx.model.tree.leaf;
 import net.styx.model.meta.Descriptor;
 import net.styx.model.meta.NodeID;
 import net.styx.model.tree.Leaf;
-import net.styx.model.tree.MutationControlMixin;
 
 public class IntLeaf implements Leaf {
 
     public static final Leaf EMPTY_VAL = new IntLeaf(Descriptor.UNDEF);
 
     private static final int EMPTY_VAL_NATIVE = -1;
-    private final MutationControlMixin mutationControl = new MutationControlMixin();
     private final NodeID nodeID;
 
     private int current = EMPTY_VAL_NATIVE;
@@ -33,8 +31,6 @@ public class IntLeaf implements Leaf {
 
     @Override
     public void setValueInt(int val) {
-        mutationControl.checkFrozen(this);
-
         // nothing to mutate
         if (current == val) return;
 
@@ -76,24 +72,8 @@ public class IntLeaf implements Leaf {
     }
 
     @Override
-    public boolean freeze() {
-        return mutationControl.freeze();
-    }
-
-    @Override
-    public boolean unfreeze() {
-        return mutationControl.unfreeze();
-    }
-
-    @Override
-    public boolean isFrozen() {
-        return mutationControl.isFrozen();
-    }
-
-    @Override
     public void commit() {
         if (changed) {
-            mutationControl.checkFrozen(this);
             previous = EMPTY_VAL_NATIVE;
             changed = false;
         }
@@ -102,7 +82,6 @@ public class IntLeaf implements Leaf {
     @Override
     public void rollback() {
         if (changed) {
-            mutationControl.checkFrozen(this);
             current = previous;
             previous = EMPTY_VAL_NATIVE;
             changed = false;

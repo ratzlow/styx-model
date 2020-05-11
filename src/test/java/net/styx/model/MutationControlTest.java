@@ -1,143 +1,83 @@
 package net.styx.model;
 
 import net.styx.model.meta.Descriptor;
-import net.styx.model.tree.Leaf;
-import net.styx.model.tree.Stateful;
-import net.styx.model.tree.leaf.EnumLeaf;
-import net.styx.model.tree.leaf.IntLeaf;
+import net.styx.model.tree.*;
 import net.styx.model.tree.leaf.LongLeaf;
+import net.styx.model.tree.leaf.StringLeaf;
 import org.junit.jupiter.api.Test;
 
-import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.ArrayList;
+import java.util.Collection;
 
+import static net.styx.model.tree.Nodes.freeze;
 import static org.assertj.core.api.Assertions.*;
 
-/**
- * Reflected contract:
- * - dirty & frozen, fail commit/rollback
- * - clean & frozen, success commit/rollback
- * - dirty & unfrozen, success commit/rollback
- * - clean & unfrozen, success commit/rollback
- *
- */
+// TODO (FRa) : (FRa): check transitive RO mode
 public class MutationControlTest {
 
     @Test
-    void createImmutableItem() {
-        long initialVal = 1L;
-        Leaf leaf = new LongLeaf(Descriptor.UNDEF, initialVal, true, true);
+    void immutableLeaf() {
+        Leaf leaf = new LongLeaf(Descriptor.UNDEF, 11L);
+        leaf.setValueLong(22L);
+        assertThat(leaf.getValueLong()).isEqualTo(22);
+        Leaf frozenLeaf = freeze(leaf);
         assertThatExceptionOfType(UnsupportedOperationException.class)
-                .isThrownBy(() -> leaf.setValueLong(initialVal + 1L))
-                .as("Immutable dirty item does not allow modification!");
-        assertThat(leaf.getValueLong()).isEqualTo(initialVal);
+                .isThrownBy(() -> frozenLeaf.setValueLong(33L));
+        assertThat(leaf.getValueLong()).isEqualTo(22);
     }
-
 
     @Test
-    void checkContractOnDirtyAndFrozenVsStatefulOps() {
-        checkContract(
-                () -> new LongLeaf(Descriptor.UNDEF, 2L, true, true),
-                true, true, false,
-                "dirty & frozen, fail commit/rollback"
-        );
-
-        checkContract(
-                () -> new LongLeaf(Descriptor.UNDEF, 2L, false, true),
-                false, true, true,
-                "clean & frozen, success commit/rollback"
-        );
-
-        checkContract(
-                () -> new LongLeaf(Descriptor.UNDEF, 2L, true, false),
-                true, false, true,
-                "dirty & unfrozen, success commit/rollback"
-        );
-
-        checkContract(
-                () -> new LongLeaf(Descriptor.UNDEF, 2L, false, false),
-                false, false, true,
-                "clean & unfrozen, success commit/rollback"
-        );
-    }
-
-
-    private void checkContract(Supplier<Leaf> leafFactory,
-                               boolean expectedDirty,
-                               boolean expectedFrozen,
-                               boolean expectedSuccessOnTX,
-                               String msg) {
-
-        Consumer<Consumer<Leaf>> check = methodDispatch -> {
-            Leaf leaf = leafFactory.get();
-            assertThat(leaf.isChanged()).isEqualTo(expectedDirty);
-            assertThat(leaf.isFrozen()).isEqualTo(expectedFrozen);
-
-            if (expectedSuccessOnTX) {
-                assertThatCode(() -> methodDispatch.accept(leaf))
-                        .as("Operation commit/rollback to succeed! " + msg)
-                        .doesNotThrowAnyException();
-            } else {
-                assertThatExceptionOfType(UnsupportedOperationException.class)
-                        .as("Operation commit/rollback to fail! " + msg)
-                        .isThrownBy(() -> methodDispatch.accept(leaf));
-            }
-        };
-
-        check.accept(Stateful::commit);
-        check.accept(Stateful::rollback);
-    }
-
-
-    @Test
-    void freezeUnfreezeSwitch() {
-        freezeUnfreezeSwitchInternal(new LongLeaf(Descriptor.UNDEF), Leaf::setValueLong, Leaf::getValueLong,
-                1L, 2L, 3L);
-
-        freezeUnfreezeSwitchInternal(new IntLeaf(Descriptor.UNDEF), Leaf::setValueInt, Leaf::getValueInt,
-                1, 2, 3);
-
-        freezeUnfreezeSwitchInternal(new EnumLeaf(Descriptor.UNDEF), Leaf::setValueEnum, Leaf::getValueEnum,
-                Color.BLUE, Color.GREEN, Color.YELLOW);
-    }
-
-    private <T> void freezeUnfreezeSwitchInternal(Leaf leaf,
-                                                  BiConsumer<Leaf, T> setValue,
-                                                  Function<Leaf, T> getValue,
-                                                  T firstVal, T secondVal, T thirdVal) {
-
-        assertThat(Set.of(firstVal, secondVal, thirdVal))
-                .as("Test values have to be distinct!")
-                .hasSize(3);
-
-        assertThat(leaf.isFrozen()).isFalse();
-        setValue.accept(leaf, firstVal);
-
-        assertThat(leaf.freeze())
-                .describedAs("Change the frozen state!")
-                .isTrue();
-        assertThat(leaf.freeze())
-                .describedAs("Repetitive change is idempotent!")
-                .isFalse();
-        assertThat(leaf.isFrozen()).isTrue();
+    void immutableContainer() {
+        Container frozenContainer = freeze(new DefaultContainer(Descriptor.PERSON));
+        assertThat(frozenContainer.isEmpty()).isTrue();
+        assertThatCode(frozenContainer::commit).doesNotThrowAnyException();
+        assertThatCode(frozenContainer::rollback).doesNotThrowAnyException();
 
         assertThatExceptionOfType(UnsupportedOperationException.class)
-                .describedAs("Object is labeled immutable!")
-                .isThrownBy(() -> setValue.accept(leaf, secondVal));
-        assertThat(getValue.apply(leaf)).isEqualTo(firstVal);
+                .isThrownBy(() -> frozenContainer.setContainer(new DefaultContainer(Descriptor.DOG)));
 
+        assertThatExceptionOfType(UnsupportedOperationException.class)
+                .isThrownBy(() -> frozenContainer.setLeaf(new StringLeaf(Descriptor.NAME)));
 
-        assertThat(leaf.unfreeze())
-                .describedAs("State change from frozen -> unfrozen")
-                .isTrue();
-        assertThat(leaf.unfreeze())
-                .describedAs("Repetitive change is idempotent!")
-                .isFalse();
+        assertThatExceptionOfType(UnsupportedOperationException.class)
+                .isThrownBy(() -> frozenContainer.setLeaf(Descriptor.NAME, leaf -> leaf.setValueString("xyz")));
 
-        setValue.accept(leaf, thirdVal);
-        assertThat(getValue.apply(leaf)).isEqualTo(thirdVal);
+        assertThatExceptionOfType(UnsupportedOperationException.class)
+                .isThrownBy(() -> frozenContainer.setGroup(new DefaultGroup<>(Descriptor.ADDRESS_GRP)));
+    }
+
+    @Test
+    void immutableGroup() {
+        Collection<Address> addresses = new ArrayList<>();
+        int addressCount = 3;
+        for (int i = 0; i< addressCount; i++) {
+            Address address = createAddress(i);
+            addresses.add(address);
+        }
+
+        Group<Address> group = new DefaultGroup<>(Descriptor.ADDRESS_GRP, addresses);
+        Address changeAddress = createAddress(addressCount);
+
+        group.add(changeAddress);
+        assertThat(group.contains(changeAddress)).isTrue();
+
+        group.remove(changeAddress);
+        assertThat(group.contains(changeAddress)).isFalse();
+
+        Group<Address> frozenGroup = freeze(group);
+        assertThatExceptionOfType(UnsupportedOperationException.class)
+                .isThrownBy(() -> frozenGroup.add(changeAddress));
+
+        assertThatExceptionOfType(UnsupportedOperationException.class)
+                .isThrownBy(() -> frozenGroup.remove(changeAddress));
+
+    }
+
+    private Address createAddress(int idx) {
+        Address address = new Address(idx);
+        address.setCity("City_" + 1);
+        address.setStreet("Street_" + 1);
+        address.setZip(1);
+        return address;
     }
 }

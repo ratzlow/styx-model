@@ -73,7 +73,17 @@ public class DefaultGroup<E extends Node> implements Group<E> {
 
     @Override
     public Iterator<E> iterator() {
-        return store.getLive().values().iterator();
+        final Iterator<E> iterator = store.getLive().values().iterator();
+        return new Iterator<>() {
+            @Override public boolean hasNext() { return iterator.hasNext(); }
+
+            @Override public E next() { return iterator.next(); }
+
+            @Override
+            public void remove() {
+                throw new IllegalStateException("Remove not supported for Group!");
+            }
+        };
     }
 
     @Override

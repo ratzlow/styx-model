@@ -2,7 +2,6 @@ package net.styx.model.tree.leaf;
 
 import net.styx.model.meta.NodeID;
 import net.styx.model.tree.Leaf;
-import net.styx.model.tree.MutationControlMixin;
 
 import java.util.Objects;
 
@@ -10,7 +9,6 @@ import java.util.Objects;
 public abstract class AbstractLeaf<T> implements Leaf {
 
     private final NodeID nodeID;
-    private final MutationControlMixin mutationControl = new MutationControlMixin();
 
     protected T current;
     protected T previous;
@@ -21,14 +19,10 @@ public abstract class AbstractLeaf<T> implements Leaf {
     }
 
     protected AbstractLeaf(NodeID nodeID, T val) {
-        this(nodeID, val, true, false);
+        this(nodeID, val, true);
     }
 
     protected AbstractLeaf(NodeID nodeID, T val, boolean markDirty) {
-        this(nodeID, val, markDirty, false);
-    }
-
-    protected AbstractLeaf(NodeID nodeID, T val, boolean markDirty, boolean markFrozen) {
         this.nodeID = nodeID;
 
         if (markDirty) {
@@ -36,20 +30,14 @@ public abstract class AbstractLeaf<T> implements Leaf {
         } else {
             current = val;
         }
-
-        if (markFrozen) {
-            mutationControl.freeze();
-        }
     }
 
 
     protected void setValue(T val) {
-        mutationControl.checkFrozen(this);
-
         // nothing to mutate
         if (same(current, val)) {
-            return;
-            // first value set, so apply
+
+        // first value set, so apply
         } else if (!changed) {
             previous = current;
             current = val;
@@ -96,7 +84,6 @@ public abstract class AbstractLeaf<T> implements Leaf {
     @Override
     public void commit() {
         if (changed) {
-            mutationControl.checkFrozen(this);
             previous = null;
             changed = false;
         }
@@ -105,31 +92,12 @@ public abstract class AbstractLeaf<T> implements Leaf {
     @Override
     public void rollback() {
         if (changed) {
-            mutationControl.checkFrozen(this);
             current = previous;
             previous = null;
             changed = false;
         }
     }
 
-    //-------------------------------------------------------------------------------------------------
-    // MutationControl
-    //-------------------------------------------------------------------------------------------------
-
-    @Override
-    public boolean freeze() {
-        return mutationControl.freeze();
-    }
-
-    @Override
-    public boolean unfreeze() {
-        return mutationControl.unfreeze();
-    }
-
-    @Override
-    public boolean isFrozen() {
-        return mutationControl.isFrozen();
-    }
 
     //-------------------------------------------------------------------------------------------------
     // Object overrides
@@ -143,13 +111,12 @@ public abstract class AbstractLeaf<T> implements Leaf {
         AbstractLeaf<?> that = (AbstractLeaf<?>) o;
         return changed == that.changed &&
                 nodeID.equals(that.nodeID) &&
-                mutationControl.equals(that.mutationControl) &&
                 Objects.equals(current, that.current) &&
                 Objects.equals(previous, that.previous);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(nodeID, mutationControl, current, previous, changed);
+        return Objects.hash(nodeID, current, previous, changed);
     }
 }

@@ -1,7 +1,10 @@
 package net.styx.model;
 
 import net.styx.model.meta.Descriptor;
-import net.styx.model.tree.*;
+import net.styx.model.tree.DefaultGroup;
+import net.styx.model.tree.Group;
+import net.styx.model.tree.Node;
+import net.styx.model.tree.Stateful;
 import net.styx.model.tree.traverse.ToStringWalker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -11,6 +14,7 @@ import java.util.*;
 
 import static net.styx.model.tree.Nodes.anyChanged;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 
 public class DefaultGroupTest {
 
@@ -50,9 +54,8 @@ public class DefaultGroupTest {
         assertThat(addresses.contains(first)).isTrue();
         assertThat(addresses.remove(first)).isTrue();
         assertThat(addresses.contains(first)).isFalse();
+        assertThat(addresses.contains(second)).as("As neg test").isFalse();
         assertThat(addresses.isEmpty()).isTrue();
-
-        assertThat(addresses.contains(second)).isFalse();
     }
 
     @Test
@@ -64,6 +67,18 @@ public class DefaultGroupTest {
         assertThat(iterator.hasNext()).isTrue();
         assertThat(iterator.next()).isEqualTo(first);
         assertThat(iterator.hasNext()).isFalse();
+    }
+
+    @Test
+    void iteratorRemoveWillRollback() {
+        Collection<Address> addresses = newAddresses(false);
+        Group<Address> group = new DefaultGroup<>(Descriptor.ADDRESS_GRP, addresses);
+        group.commit();
+        assertThat(group.size()).isEqualTo(addresses.size());
+        assertThat(group).isNotEmpty();
+
+        assertThatIllegalStateException().isThrownBy(() -> group.iterator().remove());
+        assertThat(group.size()).isEqualTo(addresses.size());
     }
 
     @Test
@@ -146,12 +161,6 @@ public class DefaultGroupTest {
     }
 
     @Test
-    void described() {
-        assertThat(new DefaultGroup<>(Descriptor.ADDRESS_GRP).getNodeID().getDescriptor()).isEqualTo(Descriptor.ADDRESS_GRP);
-    }
-
-
-    @Test
     void dirtyCheckOnInit() {
         assertThat(new DefaultGroup<>(Descriptor.ADDRESS_GRP).isChanged())
                 .as("Empty group is always clean")
@@ -190,7 +199,6 @@ public class DefaultGroupTest {
 
     @Test
     void dirtyCheck() {
-        // add and remove elem in different order -> depends on order relevant or not collection
         Collection<Address> initial = newAddresses(false);
         List<Address> initialReversed = new ArrayList<>(initial);
         Collections.reverse(initialReversed);
@@ -218,8 +226,6 @@ public class DefaultGroupTest {
         group.clear();
         group.addAll(moreSimilarAddresses);
         assertThat(group.isChanged()).as("Elements look the same but have different IDs").isTrue();
-
-        // TODO (FRa) : (FRa): tests side effect of iterator.next
     }
 
     @Test

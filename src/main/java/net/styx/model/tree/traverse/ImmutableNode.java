@@ -1,0 +1,71 @@
+package net.styx.model.tree.traverse;
+
+import net.styx.model.meta.NodeID;
+import net.styx.model.tree.Node;
+import net.styx.model.tree.TreeWalker;
+
+/**
+ * Support immutable access to particular node type instance.
+ * Only immutability of this node level is guaranteed, not that of contained children.
+ * For object graph all nodes have to be wrapped individually.
+ */
+public abstract class ImmutableNode<T extends Node> implements Node{
+
+    protected T node;
+
+    public ImmutableNode(T node) {
+        this.node = node;
+    }
+
+    @Override
+    public NodeID getNodeID() {
+        return node.getNodeID();
+    }
+
+    @Override
+    public boolean isChanged() {
+        return node.isChanged();
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return node.isEmpty();
+    }
+
+    @Override
+    public void commit() {
+        invoke(node::commit);
+    }
+
+    @Override
+    public void rollback() {
+        invoke(node::commit);
+    }
+
+    @Override
+    public void accept(TreeWalker treeWalker) {
+        node.accept(treeWalker);
+    }
+
+    @Override
+    public int hashCode() {
+        return node.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof Node && node.equals(obj);
+    }
+
+    private void invoke(Runnable operation ) {
+        if (isEmpty()) {
+            operation.run();
+        } else {
+            prevent();
+        }
+    }
+
+    protected boolean prevent() {
+        throw new UnsupportedOperationException("Cannot modify immutable node: " + node);
+    }
+}
