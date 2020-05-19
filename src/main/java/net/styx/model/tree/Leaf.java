@@ -1,8 +1,9 @@
 package net.styx.model.tree;
 
 import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.Iterator;
 
-// TODO (FRa) : (FRa): every leaf should have a strict immutable sharable default instance
 public interface Leaf extends Node {
 
     default void setValueString(String value) {
@@ -56,6 +57,10 @@ public interface Leaf extends Node {
     @Override
     default void accept(TreeWalker treeWalker) {
         treeWalker.onEnter(this);
-        treeWalker.onExit(getNodeID());
+    }
+
+    @Override
+    default Iterator<Node> children() {
+        return Collections.emptyIterator();
     }
 }

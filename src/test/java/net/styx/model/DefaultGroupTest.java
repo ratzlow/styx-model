@@ -1,22 +1,21 @@
 package net.styx.model;
 
 import net.styx.model.meta.Descriptor;
-import net.styx.model.tree.DefaultGroup;
-import net.styx.model.tree.Group;
-import net.styx.model.tree.Node;
-import net.styx.model.tree.Stateful;
-import net.styx.model.tree.traverse.ToStringWalker;
+import net.styx.model.tree.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
+import java.util.logging.Logger;
 
 import static net.styx.model.tree.Nodes.anyChanged;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 
 public class DefaultGroupTest {
+
+    static Logger LOGGER = Logger.getLogger(DefaultGroupTest.class.getName());
 
     private long addressSequence = 0;
     private DefaultGroup<Address> addresses;
@@ -367,14 +366,13 @@ public class DefaultGroupTest {
         assertThat(group.isChanged()).isFalse();
     }
 
+
     @Test
     void toStringWalker() {
-        DefaultGroup<?> addresses = new DefaultGroup<>(Descriptor.ADDRESS_GRP, newAddresses(true));
-        ToStringWalker treeWalker = new ToStringWalker();
-        addresses.accept(treeWalker);
-        String msg = treeWalker.get();
+        Group<?> addresses = new DefaultGroup<>(Descriptor.ADDRESS_GRP, newAddresses(true));
+        String msg = Nodes.asString(addresses);
         assertThat(msg).isNotBlank();
-        System.out.println(msg);
+        LOGGER.info(msg);
     }
 
 

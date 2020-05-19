@@ -1,18 +1,26 @@
 package net.styx.model;
 
 import net.styx.model.meta.Descriptor;
+import net.styx.model.tree.Container;
 import net.styx.model.tree.DefaultContainer;
 import net.styx.model.tree.Leaf;
 
 import java.math.BigDecimal;
 import java.util.Collection;
 
-public class Person extends DefaultContainer {
+public class Person implements ContainerMixin {
 
     private static final Descriptor DESCRIPTOR = Descriptor.PERSON;
 
+    private final Container container;
+
+
     public Person() {
-        super(DESCRIPTOR);
+        this(new DefaultContainer(DESCRIPTOR));
+    }
+
+    public Person(Container container) {
+        this.container = container;
     }
 
     //------------------------------------------------------------------------------------------
@@ -24,7 +32,7 @@ public class Person extends DefaultContainer {
     }
 
     public String getName() {
-        return get(Descriptor.NAME, Leaf::getValueString);
+        return getLeafValue(Descriptor.NAME, Leaf::getValueString);
     }
 
 
@@ -33,7 +41,7 @@ public class Person extends DefaultContainer {
     }
 
     public int getAge() {
-        return get(Descriptor.AGE, Leaf::getValueInt);
+        return getLeafValue(Descriptor.AGE, Leaf::getValueInt);
     }
 
 
@@ -42,7 +50,7 @@ public class Person extends DefaultContainer {
     }
 
     public BigDecimal getIncome() {
-        return get(Descriptor.INCOME, Leaf::getValueBigDec);
+        return getLeafValue(Descriptor.INCOME, Leaf::getValueBigDec);
     }
 
 
@@ -51,7 +59,7 @@ public class Person extends DefaultContainer {
     }
 
     public Gender getGender() {
-        return get(Descriptor.GENDER, Leaf::getValueEnum);
+        return getLeafValue(Descriptor.GENDER, Leaf::getValueEnum);
     }
 
     public void setDog(Dog dog) {
@@ -64,5 +72,14 @@ public class Person extends DefaultContainer {
 
     public Collection<Book> getBooks() {
         return getGroup(Descriptor.BOOK_GRP, Book.class);
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    // bridge 
+    //-------------------------------------------------------------------------------------------------
+
+    @Override
+    public Container delegate() {
+        return container;
     }
 }

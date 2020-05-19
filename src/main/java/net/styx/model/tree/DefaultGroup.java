@@ -22,6 +22,8 @@ import static java.util.stream.Collectors.toSet;
 public class DefaultGroup<E extends Node> implements Group<E> {
 
     private final NodeID nodeID;
+    private final Descriptor acceptedChildDescriptor;
+
     private final Supplier<Map<NodeID, E>> generator;
 
     private final MapStore<E> store;
@@ -46,6 +48,7 @@ public class DefaultGroup<E extends Node> implements Group<E> {
                         Collection<E> live) {
         this.nodeID = nodeID;
         this.generator = generator;
+        this.acceptedChildDescriptor = getChildDescriptor(nodeID.getDescriptor());
         this.store = new MapStore<>(toMap(live));
     }
 
@@ -227,10 +230,13 @@ public class DefaultGroup<E extends Node> implements Group<E> {
     @Override
     public void accept(TreeWalker treeWalker) {
         treeWalker.onEnter(this);
-        for (Iterator<E> iter = store.getLive().values().iterator(); iter.hasNext() && treeWalker.proceed(); ) {
-            iter.next().accept(treeWalker);
-        }
-        treeWalker.onExit(getNodeID());
+    }
+
+    @Override
+    public Iterator<Node> children() {
+        @SuppressWarnings("unchecked")
+        Iterator<Node> iter = (Iterator<Node>) iterator();
+        return iter;
     }
 
     //------------------------------------------------------------------
@@ -256,21 +262,25 @@ public class DefaultGroup<E extends Node> implements Group<E> {
         return temp;
     }
 
-    // TODO (FRa) : (FRa): perf
+    private Descriptor getChildDescriptor(Descriptor descriptor) {
+        if (descriptor.getChildren().size() != 1) {
+            String msg = "Only single type acceptable for group descriptor but found " + descriptor;
+            throw new IllegalStateException(msg);
+        }
+
+        return descriptor.getChildren().stream().findFirst().orElseThrow();
+    }
+
     private E typeCheck(Object element) {
         if (element == null) {
             throw new NullPointerException("Element must not be null!");
         }
 
-        Descriptor descriptor = nodeID.getDescriptor();
-        Class<?> definingClass = descriptor.getDefiningClass();
-        boolean typeOK = descriptor.getChildren().stream()
-                .map(Descriptor::getDefiningClass)
-                .anyMatch(childClazz -> element.getClass().isAssignableFrom(childClazz));
+        boolean typeOK = ((Node)element).getNodeID().getDescriptor() == acceptedChildDescriptor;
 
         if (!typeOK) {
             throw new IllegalArgumentException("Argument must be != null and of type=" +
-                    definingClass.getSimpleName());
+                    acceptedChildDescriptor);
         }
 
         return (E) element;

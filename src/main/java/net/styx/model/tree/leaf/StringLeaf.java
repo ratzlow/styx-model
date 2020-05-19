@@ -9,8 +9,6 @@ import java.util.Objects;
 
 public class StringLeaf extends AbstractLeaf<String> {
 
-    public static final StringLeaf EMPTY_VAL = new StringLeaf();
-
     //----------------------------------------------------------------------
     // constructors
     //----------------------------------------------------------------------

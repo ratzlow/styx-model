@@ -1,15 +1,21 @@
 package net.styx.model;
 
 import net.styx.model.meta.Descriptor;
+import net.styx.model.tree.Container;
 import net.styx.model.tree.DefaultContainer;
 import net.styx.model.tree.Leaf;
 
-public class Dog extends DefaultContainer {
+public class Dog implements ContainerMixin {
 
     public static final Descriptor DESCRIPTOR = Descriptor.DOG;
+    private final Container container;
 
     public Dog() {
-        super(DESCRIPTOR);
+        this(new DefaultContainer(DESCRIPTOR));
+    }
+
+    public Dog(Container container) {
+        this.container = container;
     }
 
     //------------------------------------------------------------------------------------------
@@ -21,7 +27,7 @@ public class Dog extends DefaultContainer {
     }
 
     public String getName() {
-        return get(Descriptor.NAME, Leaf::getValueString);
+        return getLeafValue(Descriptor.NAME, Leaf::getValueString);
     }
 
 
@@ -30,6 +36,15 @@ public class Dog extends DefaultContainer {
     }
 
     public int getAge() {
-        return get(Descriptor.AGE, Leaf::getValueInt);
+        return getLeafValue(Descriptor.AGE, Leaf::getValueInt);
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    // bridge
+    //-------------------------------------------------------------------------------------------------
+
+    @Override
+    public Container delegate() {
+        return container;
     }
 }

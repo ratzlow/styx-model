@@ -3,61 +3,82 @@ package net.styx.model.tree.traverse;
 import net.styx.model.meta.NodeID;
 import net.styx.model.tree.*;
 
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class ImmutableContainer extends ImmutableNode<Container> implements Container {
 
-    public ImmutableContainer(Container node) {
+    private final Container immutable;
+
+    public ImmutableContainer(Container node, Collection<Node> immutableChildren) {
         super(node);
+        immutable = new DefaultContainer(node.getNodeID(), immutableChildren);
     }
 
     @Override
-    public void setLeaf(Leaf leaf) {
-        prevent();
+    public <T> T getLeafValue(NodeID nodeID, Function<Leaf, T> dispatchGet) {
+        return immutable.getLeafValue(nodeID, dispatchGet);
     }
 
     @Override
-    public void setLeaf(NodeID nodeID, Consumer<Leaf> dispatchSet) {
-        prevent();
+    public Container setLeaf(Leaf leaf) {
+        throw new UnsupportedOperationException(exceptionMsg());
+    }
+
+    @Override
+    public Container setLeaf(NodeID nodeID, Consumer<Leaf> dispatchSet) {
+        throw new UnsupportedOperationException(exceptionMsg());
     }
 
     @Override
     public Leaf getLeaf(NodeID nodeID) {
-        return node.getLeaf(nodeID);
+        return immutable.getLeaf(nodeID);
     }
 
     @Override
-    public void setContainer(Container container) {
-        prevent();
+    public Container setContainer(Container container) {
+        throw new UnsupportedOperationException(exceptionMsg());
     }
 
     @Override
     public Container getContainer(NodeID nodeID) {
-        return node.getContainer(nodeID);
+        return immutable.getContainer(nodeID);
     }
 
     @Override
     public <T extends Container> T getContainer(NodeID nodeID, Class<T> clazz) {
-        return node.getContainer(nodeID, clazz);
+        return immutable.getContainer(nodeID, clazz);
     }
 
     @Override
-    public <E extends Node> void setGroup(Group<E> group) {
-        prevent();
+    public <E extends Node> Container setGroup(Group<E> group) {
+        throw new UnsupportedOperationException(exceptionMsg());
     }
 
     @Override
     public <E extends Node> Group<E> getGroup(NodeID nodeID) {
-        return node.getGroup(nodeID);
+        return immutable.getGroup(nodeID);
     }
 
     @Override
     public <E extends Node> Group<E> getGroup(NodeID nodeID, Class<E> elementClazz) {
-        return node.getGroup(nodeID, elementClazz);
+        return immutable.getGroup(nodeID, elementClazz);
     }
 
     @Override
     public boolean remove(NodeID nodeID) {
         return prevent();
+    }
+
+    @Override
+    public Iterator<Node> children() {
+        return immutable.children();
+    }
+
+    @Override
+    public void traverse(TreeWalker treeWalker) {
+        immutable.traverse(treeWalker);
     }
 }

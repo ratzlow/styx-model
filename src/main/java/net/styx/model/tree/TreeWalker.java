@@ -2,7 +2,8 @@ package net.styx.model.tree;
 
 import net.styx.model.meta.NodeID;
 
-// TODO (FRa) : (FRa): add cloning
+// TODO (FRa) : (FRa): add cloning, pruning empty/unset nodes
+// TODO (FRa) : (FRa): rename as it is not by design a tree walker anymore
 public interface TreeWalker {
 
     void onEnter(Leaf leaf);

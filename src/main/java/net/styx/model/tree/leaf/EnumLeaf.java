@@ -1,12 +1,9 @@
 package net.styx.model.tree.leaf;
 
-import net.styx.model.meta.Descriptor;
 import net.styx.model.meta.NodeID;
 import net.styx.model.tree.Leaf;
 
 public class EnumLeaf extends AbstractLeaf<Enum<?>> {
-
-    public static final Leaf EMPTY_VAL = new EnumLeaf(Descriptor.UNDEF);
 
     public EnumLeaf(NodeID nodeID) {
         super(nodeID);

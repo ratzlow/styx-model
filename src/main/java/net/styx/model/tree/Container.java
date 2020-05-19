@@ -3,9 +3,8 @@ package net.styx.model.tree;
 import net.styx.model.meta.NodeID;
 
 import java.util.function.Consumer;
+import java.util.function.Function;
 
-// TODO (FRa) : (FRa): simplify interface to pass NodeType to unify across different subclasses;
-// TODO (FRa) : (FRa): rewrite setters to allow method chaining
 public interface Container extends Node {
 
     //------------------------------------------------------------------
@@ -16,11 +15,13 @@ public interface Container extends Node {
      * @param leaf
      * @throws NullPointerException if leaf is null
      */
-    void setLeaf(Leaf leaf);
+    Container setLeaf(Leaf leaf);
 
-    void setLeaf(NodeID nodeID, Consumer<Leaf> dispatchSet);
+    Container setLeaf(NodeID nodeID, Consumer<Leaf> dispatchSet);
 
     Leaf getLeaf(NodeID nodeID);
+
+    <T> T getLeafValue(NodeID nodeID, Function<Leaf, T> dispatchGet);
 
 
     //------------------------------------------------------------------
@@ -31,7 +32,7 @@ public interface Container extends Node {
      * @param container
      * @throws NullPointerException if node is null
      */
-    void setContainer(Container container);
+    Container setContainer(Container container);
 
     Container getContainer(NodeID nodeID);
 
@@ -42,7 +43,7 @@ public interface Container extends Node {
     // Group accessors
     //------------------------------------------------------------------
 
-    <E extends Node> void setGroup(Group<E> group);
+    <E extends Node> Container setGroup(Group<E> group);
 
     /**
      * @param nodeID identifier of item to fetch or create

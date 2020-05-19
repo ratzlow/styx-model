@@ -1,6 +1,5 @@
 package net.styx.model.tree.leaf;
 
-import net.styx.model.meta.Descriptor;
 import net.styx.model.meta.NodeID;
 import net.styx.model.tree.Leaf;
 
@@ -9,15 +8,9 @@ import java.util.Objects;
 
 public class LongLeaf extends AbstractLeaf<Long> {
 
-    public static final LongLeaf EMPTY_VAL = new LongLeaf();
-
     //----------------------------------------------------------------------
     // constructors
     //----------------------------------------------------------------------
-
-    public LongLeaf() {
-        super(Descriptor.UNDEF);
-    }
 
     public LongLeaf(NodeID nodeID) {
         super(nodeID);

@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 public class ToStringWalker implements TreeWalker {
+    // TODO (FRa) : (FRa): should be more light weight e.g. string builder with
+    //  stack control var e.g. bracket counter
     private final Collection<String> events = new ArrayList<>();
 
     @Override
@@ -29,7 +31,8 @@ public class ToStringWalker implements TreeWalker {
         events.add("}");
     }
 
-    public String get() {
+    @Override
+    public String toString() {
         return String.join(" ", events);
     }
 

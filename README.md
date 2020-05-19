@@ -139,11 +139,12 @@ declared in a generic way to allow code generation.
 
 ## Optimization options
 - propagate dirty flags up to root to mark dirty paths. Consider mark dirty and clean
-- all 1 -> 0..1 classes could share attributeMap from parent, requires full path as key 
+- all 1 -> 0 .. 1 classes could share attributeMap from parent, requires full path as key 
     to avoid ambiguity person.name vs. dog.name
 - recycle objects
 - avoid auto boxing
 - init maps on demand: e.g. DataContainer, Group
+- lazy init based on test evidence, in the meanwhile remove lazy init for predictability 
 
 ## Gaps in model design
 - missing: support component A has named references B.1 and B.2 

@@ -1,69 +1,70 @@
 package net.styx.model.meta;
 
 import net.styx.model.*;
+import net.styx.model.tree.Container;
 
-import java.math.BigDecimal;
 import java.util.*;
+import java.util.function.Function;
 
 // TODO (FRa) : (FRa): encapsulate techn. Attributes in component? entities with
-// TODO (FRa) : (FRa): can we remove Clazz param?
 public enum Descriptor implements NodeID {
 
     /**
      * default unset value
      */
-    UNDEF(-1, "undefinedNode", NodeType.LEAF, DataType.UNDEF, Integer.class),
+    UNDEF(-1, "undefinedNode", NodeType.LEAF, DataType.UNDEF),
 
     // technical fields
-    VERSION(6, "version", NodeType.LEAF, DataType.INT, Integer.class),
+    VERSION(6, "version", NodeType.LEAF, DataType.INT),
 
     // business fields fields
-    NAME(10, "name", NodeType.LEAF, DataType.STRING, String.class),
-    AGE(11, "age", NodeType.LEAF, DataType.INT, Integer.class),
-    INCOME(12, "income", NodeType.LEAF, DataType.BIG_DECIMAL, BigDecimal.class),
-    GENDER(13, "gender", NodeType.LEAF, DataType.ENUM, Gender.class),
+    NAME(10, "name", NodeType.LEAF, DataType.STRING),
+    AGE(11, "age", NodeType.LEAF, DataType.INT),
+    INCOME(12, "income", NodeType.LEAF, DataType.BIG_DECIMAL),
+    GENDER(13, "gender", NodeType.LEAF, DataType.ENUM),
 
-    STREET(14, "street", NodeType.LEAF, DataType.STRING, String.class),
-    ZIP(15, "zip", NodeType.LEAF, DataType.INT, Integer.class),
-    CITY(16, "city", NodeType.LEAF, DataType.STRING, String.class),
+    STREET(14, "street", NodeType.LEAF, DataType.STRING),
+    ZIP(15, "zip", NodeType.LEAF, DataType.INT),
+    CITY(16, "city", NodeType.LEAF, DataType.STRING),
 
-    ISBN(20, "isbn", NodeType.LEAF, DataType.STRING, String.class),
-    TITLE(21, "title", NodeType.LEAF, DataType.STRING, String.class),
+    ISBN(20, "isbn", NodeType.LEAF, DataType.STRING),
+    TITLE(21, "title", NodeType.LEAF, DataType.STRING),
 
-    SIZE(30, "size", NodeType.LEAF, DataType.STRING, Integer.class),
-    COLOR(31, "color", NodeType.LEAF, DataType.ENUM, Integer.class),
+    SIZE(30, "size", NodeType.LEAF, DataType.STRING),
+    COLOR(31, "color", NodeType.LEAF, DataType.ENUM),
 
 
     // components
-    DOG(1001, "dog", NodeType.CONTAINER, DataType.UNDEF, Dog.class,
-            Set.of(NAME, AGE)),
+    DOG(1001, "dog", NodeType.CONTAINER, DataType.UNDEF,
+            Set.of(NAME, AGE), Dog::new),
 
-    ADDRESS(1002, "address", NodeType.CONTAINER, DataType.UNDEF, Address.class,
-            Set.of(STREET, ZIP, CITY)),
+    ADDRESS(1002, "address", NodeType.CONTAINER, DataType.UNDEF,
+            Set.of(STREET, ZIP, CITY), Address::new),
 
-    BOOK(1003, "book", NodeType.CONTAINER, DataType.UNDEF, Book.class,
-            Set.of(ISBN, TITLE)),
+    BOOK(1003, "book", NodeType.CONTAINER, DataType.UNDEF,
+            Set.of(ISBN, TITLE), Book::new),
 
-    SHOE(1004, "shoe", NodeType.CONTAINER, DataType.UNDEF, Shoe.class,
-            Set.of(SIZE, COLOR)),
+    SHOE(1004, "shoe", NodeType.CONTAINER, DataType.UNDEF,
+            Set.of(SIZE, COLOR), Shoe::new),
 
     // groups
-    ADDRESS_GRP(2001, "addresses", NodeType.GROUP, DataType.UNDEF, Collection.class,
+    ADDRESS_GRP(2001, "addresses", NodeType.GROUP, DataType.UNDEF,
             Set.of(ADDRESS)),
 
-    FAMILY_GRP(2002, "familyMembers", NodeType.GROUP, DataType.UNDEF, Collection.class,
+    FAMILY_GRP(2002, "familyMembers", NodeType.GROUP, DataType.UNDEF,
             new int[]{3001}),
 
-    BOOK_GRP(2003, "books", NodeType.GROUP, DataType.UNDEF, Collection.class,
+    BOOK_GRP(2003, "books", NodeType.GROUP, DataType.UNDEF,
             Set.of(BOOK)),
 
-    SHOE_GRP(2004, "shoes", NodeType.GROUP, DataType.UNDEF, Collection.class,
+    SHOE_GRP(2004, "shoes", NodeType.GROUP, DataType.UNDEF,
             Set.of(SHOE)),
 
 
     // domain roots => component
-    PERSON(3001, "person", NodeType.CONTAINER, DataType.UNDEF, Person.class,
-            Set.of(NAME, AGE, INCOME, GENDER, DOG, ADDRESS_GRP, BOOK_GRP, FAMILY_GRP));
+    PERSON(3001, "person", NodeType.CONTAINER, DataType.UNDEF,
+            Set.of(NAME, AGE, INCOME, GENDER, DOG, ADDRESS_GRP, BOOK_GRP, FAMILY_GRP),
+            Person::new);
 
 
     //---------------------------------------------------------------------------
@@ -74,34 +75,39 @@ public enum Descriptor implements NodeID {
     private final String propName;
     private final NodeType nodeType;
     private final DataType dataType;
-    private final Class<?> definingClass;
+    private final Function<Container, Container> modelFactory;
     private Set<Descriptor> children;
-    private int[] childTags = new int[0];
+    private int[] childTags = new int[0]; // to avoid forward references during compile time
 
 
     //---------------------------------------------------------------------------
     // constructors
     //---------------------------------------------------------------------------
     // TODO (FRa) : (FRa): consolidate constructors
-    Descriptor(int tagNumber, String propName, NodeType nodeType, DataType type, Class<?> clazz,
-               Set<Descriptor> children) {
+    Descriptor(int tagNumber, String propName, NodeType nodeType, DataType type,
+               Set<Descriptor> children,
+               Function<Container, Container> modelFactory) {
         this.tagNumber = tagNumber;
         this.propName = propName;
         this.dataType = type;
         this.nodeType = nodeType;
-        this.definingClass = clazz;
+        this.modelFactory = modelFactory;
         this.children = Collections.unmodifiableSet(children);
     }
 
-    Descriptor(int tagNumber, String propName, NodeType nodeType, DataType dataType, Class<?> clazz) {
-        this(tagNumber, propName, nodeType, dataType, clazz, Collections.emptySet());
+    Descriptor(int tagNumber, String propName, NodeType nodeType, DataType type,
+               Set<Descriptor> children) {
+        this(tagNumber, propName, nodeType, type, children, null);
     }
 
-    Descriptor(int tagNumber, String propName, NodeType nodeType, DataType dataType, Class<?> clazz, int[] childTags) {
-        this(tagNumber, propName, nodeType, dataType, clazz);
+    Descriptor(int tagNumber, String propName, NodeType nodeType, DataType dataType) {
+        this(tagNumber, propName, nodeType, dataType, Collections.emptySet(), null);
+    }
+
+    Descriptor(int tagNumber, String propName, NodeType nodeType, DataType dataType, int[] childTags) {
+        this(tagNumber, propName, nodeType, dataType);
         this.childTags = childTags;
     }
-
 
     //---------------------------------------------------------------------------
     // API
@@ -151,8 +157,8 @@ public enum Descriptor implements NodeID {
         return children;
     }
 
-    public Class<?> getDefiningClass() {
-        return definingClass;
+    public Function<Container, Container> getDomainModelFactory() {
+        return modelFactory;
     }
 
     @Override

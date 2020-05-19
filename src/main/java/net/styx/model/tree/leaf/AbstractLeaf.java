@@ -5,7 +5,6 @@ import net.styx.model.tree.Leaf;
 
 import java.util.Objects;
 
-// TODO (FRa) : (FRa): perf: minimize copying values by stable orgValue vs. newValue?
 public abstract class AbstractLeaf<T> implements Leaf {
 
     private final NodeID nodeID;

@@ -4,6 +4,7 @@ import net.styx.model.meta.NodeID;
 
 import java.util.Map;
 
+// TODO (FRa) : (FRa): remove lazy init to simplify code
 public class MapStore<E extends Node> implements Stateful {
 
     private boolean created = true;

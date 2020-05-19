@@ -8,12 +8,16 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Set;
+import java.util.logging.Logger;
 
 import static net.styx.model.tree.Nodes.freeze;
 import static org.assertj.core.api.Assertions.*;
 
 // TODO (FRa) : (FRa): check transitive RO mode
 public class MutationControlTest {
+
+    static Logger LOGGER = Logger.getLogger(MutationControlTest.class.getCanonicalName());
 
     @Test
     void immutableLeaf() {
@@ -70,8 +74,27 @@ public class MutationControlTest {
 
         assertThatExceptionOfType(UnsupportedOperationException.class)
                 .isThrownBy(() -> frozenGroup.remove(changeAddress));
-
     }
+
+    @Test
+    void deepImmutableGroup() {
+        Group<Address> group = new DefaultGroup<>(Descriptor.ADDRESS_GRP,
+                Set.of(createAddress(1), createAddress(2)));
+
+        Group<Address> frozenGroup = freeze(group);
+        assertThatExceptionOfType(UnsupportedOperationException.class)
+                .isThrownBy(() -> frozenGroup.add(createAddress(3)));
+
+        LOGGER.info(() -> Nodes.asString(frozenGroup));
+
+        Address address = frozenGroup.iterator().next();
+        int newZip = address.getZip() * 2;
+        assertThatExceptionOfType(UnsupportedOperationException.class)
+                .as("Nodes on all hierarchies must be wrapped to be immutable!")
+                .isThrownBy(() -> address.setZip(newZip));
+        assertThat(frozenGroup).noneMatch(a -> a.getZip() == newZip);
+    }
+
 
     private Address createAddress(int idx) {
         Address address = new Address(idx);

@@ -1,13 +1,14 @@
 package net.styx.model.tree;
 
 import net.styx.model.meta.DataType;
+import net.styx.model.meta.Descriptor;
 import net.styx.model.meta.NodeID;
 import net.styx.model.tree.leaf.*;
+import net.styx.model.tree.traverse.ImmutableLeaf;
 
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toMap;
@@ -17,13 +18,9 @@ import static java.util.stream.Collectors.toMap;
  * The addition of an attribute (node/leaf) is only considered as a change if it comes along with
  * an attribute value change. The pure add operation of a clean attribute does not mark
  * the container dirty.
- *
- * <p>
- * // TODO (FRa) : (FRa): add API to discarded empty/unset.
  */
 public class DefaultContainer implements Container {
 
-    // TODO (FRa) : (FRa): make sure those leafs are immutable, to avoid side effects
     private static final Map<DataType, Leaf> UNSET_LEAFS = createUnsetLeafs();
     private static final Map<DataType, Function<NodeID, Leaf>> LEAF_GENERATORS = createLeafGenerators();
 
@@ -36,28 +33,20 @@ public class DefaultContainer implements Container {
     //------------------------------------------------------------------------------
 
     public DefaultContainer(NodeID nodeID) {
-        this(nodeID, emptyList(), emptyList(), emptyList());
+        this(nodeID, emptyList());
     }
 
     public DefaultContainer(NodeID nodeID, long idx) {
-        this(new IdxNodeID(nodeID.getDescriptor(), idx), emptyList(), emptyList(), emptyList());
+        this(new IdxNodeID(nodeID.getDescriptor(), idx), emptyList());
     }
 
-    public DefaultContainer(NodeID nodeID, Collection<Leaf> initialLeafs) {
-        this(nodeID, initialLeafs, Collections.emptySet(), emptyList());
-    }
-
-    private DefaultContainer(NodeID nodeID,
-                             Collection<Leaf> initialLeafs,
-                             Collection<Container> initialContainers,
-                             Collection<Group<?>> initialGroups) {
+    public DefaultContainer(NodeID nodeID, Collection<Node> children) {
         this.nodeID = nodeID;
 
-
-        Map<NodeID, Node> allNodes = Stream.of(initialLeafs, initialContainers, initialGroups)
-                .flatMap(Collection::stream)
-                .collect(toMap(Node::getNodeID, Function.identity(),
-                        (existing, replacement) -> existing, HashMap::new));
+        Map<NodeID, Node> allNodes = children.stream().collect(
+                toMap(Node::getNodeID, Function.identity(),
+                        (existing, replacement) -> existing, HashMap::new)
+        );
         this.store = new MapStore<>(allNodes);
     }
 
@@ -67,39 +56,16 @@ public class DefaultContainer implements Container {
     //------------------------------------------------------------------------------
 
 
-    @Deprecated
-    public <T> T get(NodeID nodeID, Function<Leaf, T> dispatchGet) {
+    public <T> T getLeafValue(NodeID nodeID, Function<Leaf, T> dispatchGet) {
         memberCheck(nodeID);
         final Leaf leaf;
         if (store.getLive().containsKey(nodeID)) {
             leaf = asLeaf(store.getLive().get(nodeID));
         } else {
-            // TODO (FRa) : (FRa): return immutable default value leaf
             leaf = UNSET_LEAFS.get(nodeID.getDescriptor().getDataType());
         }
 
         return dispatchGet.apply(leaf);
-    }
-
-    /**
-     * Create leaf on the fly if none exists and apply setter to set new value on it.
-     *
-     * @param nodeID      of leaf
-     * @param dispatchSet type matching setter
-     */
-    public void setLeaf(NodeID nodeID, Consumer<Leaf> dispatchSet) {
-        memberCheck(nodeID);
-        store.checkBackup();
-        Function<NodeID, Leaf> leafGenerator = LEAF_GENERATORS.get(nodeID.getDescriptor().getDataType());
-        Node node = store.getLive().computeIfAbsent(nodeID, leafGenerator);
-        dispatchSet.accept(asLeaf(node));
-    }
-
-    @Override
-    public void setLeaf(Leaf leaf) {
-        memberCheck(leaf.getNodeID());
-        store.checkBackup();
-        store.getLive().put(leaf.getNodeID(), leaf);
     }
 
     @Override
@@ -109,11 +75,39 @@ public class DefaultContainer implements Container {
         return asLeaf(store.getLive().getOrDefault(nodeID, UNSET_LEAFS.get(dataType)));
     }
 
+    /**
+     * Create leaf on the fly if none exists and apply setter to set new value on it.
+     *
+     * @param nodeID      of leaf
+     * @param dispatchSet type matching setter
+     */
+    public Container setLeaf(NodeID nodeID, Consumer<Leaf> dispatchSet) {
+        memberCheck(nodeID);
+        store.checkBackup();
+        Function<NodeID, Leaf> leafGenerator = LEAF_GENERATORS.get(nodeID.getDescriptor().getDataType());
+        Node node = store.getLive().computeIfAbsent(nodeID, leafGenerator);
+        dispatchSet.accept(asLeaf(node));
+
+        return this;
+    }
+
     @Override
-    public void setContainer(Container container) {
+    public Container setLeaf(Leaf leaf) {
+        memberCheck(leaf.getNodeID());
+        store.checkBackup();
+        store.getLive().put(leaf.getNodeID(), leaf);
+
+        return this;
+    }
+
+
+    @Override
+    public Container setContainer(Container container) {
         memberCheck(container.getNodeID());
         store.checkBackup();
         store.getLive().put(container.getNodeID(), container);
+
+        return this;
     }
 
     @Override
@@ -131,10 +125,12 @@ public class DefaultContainer implements Container {
     }
 
     @Override
-    public <E extends Node> void setGroup(Group<E> group) {
+    public <E extends Node> Container setGroup(Group<E> group) {
         memberCheck(group.getNodeID());
         store.checkBackup();
         store.getLive().put(group.getNodeID(), group);
+
+        return this;
     }
 
     @Override
@@ -186,12 +182,11 @@ public class DefaultContainer implements Container {
     @Override
     public void accept(TreeWalker treeWalker) {
         treeWalker.onEnter(this);
-        // TODO (FRa) : (FRa): centralize the iteration?
-        Collection<Node> nodes = store.getLive().values();
-        for (Iterator<Node> iter = nodes.iterator(); iter.hasNext() && treeWalker.proceed(); ) {
-            iter.next().accept(treeWalker);
-        }
-        treeWalker.onExit(nodeID);
+    }
+
+    @Override
+    public Iterator<Node> children() {
+        return store.getLive().values().iterator();
     }
 
     @Override
@@ -216,11 +211,13 @@ public class DefaultContainer implements Container {
     // TODO (FRa) : (FRa): inject lookup map
     private static Map<DataType, Leaf> createUnsetLeafs() {
         Map<DataType, Leaf> unsetLeafs = new EnumMap<>(DataType.class);
-        unsetLeafs.put(DataType.BIG_DECIMAL, BigDecimalLeaf.EMPTY_VAL);
-        unsetLeafs.put(DataType.INT, IntLeaf.EMPTY_VAL);
-        unsetLeafs.put(DataType.LONG, LongLeaf.EMPTY_VAL);
-        unsetLeafs.put(DataType.STRING, StringLeaf.EMPTY_VAL);
-        unsetLeafs.put(DataType.ENUM, EnumLeaf.EMPTY_VAL);
+        unsetLeafs.put(DataType.BIG_DECIMAL, new BigDecimalLeaf(Descriptor.UNDEF));
+        unsetLeafs.put(DataType.INT, new IntLeaf(Descriptor.UNDEF));
+        unsetLeafs.put(DataType.LONG, new LongLeaf(Descriptor.UNDEF));
+        unsetLeafs.put(DataType.STRING, new StringLeaf(Descriptor.UNDEF));
+        unsetLeafs.put(DataType.ENUM, new EnumLeaf(Descriptor.UNDEF));
+
+        unsetLeafs.replaceAll( (dataType, leaf) -> new ImmutableLeaf(leaf) );
         return unsetLeafs;
     }
 

@@ -1,14 +1,11 @@
 package net.styx.model.tree.leaf;
 
-import net.styx.model.meta.Descriptor;
 import net.styx.model.meta.NodeID;
 import net.styx.model.tree.Leaf;
 
 import java.math.BigDecimal;
 
 public class BigDecimalLeaf extends AbstractLeaf<BigDecimal> {
-
-    public static final Leaf EMPTY_VAL = new BigDecimalLeaf(Descriptor.UNDEF);
 
     public BigDecimalLeaf(NodeID nodeID) {
         super(nodeID);

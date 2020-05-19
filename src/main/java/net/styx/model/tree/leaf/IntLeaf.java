@@ -1,14 +1,11 @@
 package net.styx.model.tree.leaf;
 
-import net.styx.model.meta.Descriptor;
 import net.styx.model.meta.NodeID;
 import net.styx.model.tree.Leaf;
 
 public class IntLeaf implements Leaf {
 
-    public static final Leaf EMPTY_VAL = new IntLeaf(Descriptor.UNDEF);
-
-    private static final int EMPTY_VAL_NATIVE = -1;
+    public static final int EMPTY_VAL_NATIVE = -1;
     private final NodeID nodeID;
 
     private int current = EMPTY_VAL_NATIVE;
@@ -68,7 +65,7 @@ public class IntLeaf implements Leaf {
 
     @Override
     public boolean isEmpty() {
-        return current == EMPTY_VAL.getValueInt();
+        return current == EMPTY_VAL_NATIVE;
     }
 
     @Override

@@ -2,6 +2,7 @@ package net.styx.model.tree.traverse;
 
 import net.styx.model.tree.Group;
 import net.styx.model.tree.Node;
+import net.styx.model.tree.TreeWalker;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -20,10 +21,14 @@ import java.util.stream.Stream;
 public class ImmutableGroup<E extends Node> extends ImmutableNode<Group<E>> implements Group<E> {
 
     private final Collection<E> immutable;
-    
-    public ImmutableGroup(Group<E> node) {
+
+    /**
+     * @param node mutable node
+     * @param immutableNodes wrapped immutable nodes (and sub nodes)
+     */
+    public ImmutableGroup(Group<E> node, Collection<E> immutableNodes) {
         super(node);
-        immutable = Collections.unmodifiableCollection(node);
+        immutable = Collections.unmodifiableCollection(immutableNodes);
     }
 
     @Override
@@ -53,12 +58,12 @@ public class ImmutableGroup<E extends Node> extends ImmutableNode<Group<E>> impl
 
     @Override
     public boolean add(E e) {
-        return immutable.add(e);
+        return prevent();
     }
 
     @Override
     public boolean remove(Object o) {
-        return immutable.remove(o);
+        return prevent();
     }
 
     @Override
@@ -68,22 +73,22 @@ public class ImmutableGroup<E extends Node> extends ImmutableNode<Group<E>> impl
 
     @Override
     public boolean addAll(Collection<? extends E> c) {
-        return immutable.addAll(c);
+        return prevent();
     }
 
     @Override
     public boolean removeAll(Collection<?> c) {
-        return immutable.removeAll(c);
+        return prevent();
     }
 
     @Override
     public boolean retainAll(Collection<?> c) {
-        return immutable.retainAll(c);
+        return prevent();
     }
 
     @Override
     public void clear() {
-        immutable.clear();
+        prevent();
     }
 
     @Override
@@ -93,7 +98,7 @@ public class ImmutableGroup<E extends Node> extends ImmutableNode<Group<E>> impl
 
     @Override
     public boolean removeIf(Predicate<? super E> filter) {
-        return immutable.removeIf(filter);
+        return prevent();
     }
 
     @Override
@@ -114,5 +119,22 @@ public class ImmutableGroup<E extends Node> extends ImmutableNode<Group<E>> impl
     @Override
     public void forEach(Consumer<? super E> action) {
         immutable.forEach(action);
+    }
+
+    @Override
+    public Iterator<Node> children() {
+        @SuppressWarnings("unchecked")
+        Iterator<Node> iter = (Iterator<Node>) iterator();
+        return iter;
+    }
+
+    /**
+     * Pass immutable version to prevent leaking mutable node.
+     *
+     * @param treeWalker Visitor
+     */
+    @Override
+    public void traverse(TreeWalker treeWalker) {
+        treeWalker.onEnter(this);
     }
 }

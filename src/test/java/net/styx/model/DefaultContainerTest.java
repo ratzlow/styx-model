@@ -15,11 +15,35 @@ import java.util.Set;
 import static net.styx.model.tree.Nodes.anyChanged;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 // TODO (FRa) : (FRa): test rollback of add/remove ops
 // TODO (FRa) : (FRa): test access to attributes not put into map, make it NPE safe by creating
 //  member on demand (problem: components which need ID -> should only apply for elem in coll)
 public class DefaultContainerTest {
+
+    @Test
+    void unsetLeafsAreImmutable() {
+        Container dc = new DefaultContainer(Descriptor.ADDRESS);
+        assertThat(dc.getLeaf(Descriptor.STREET))
+                .as("only return unset default value")
+                .isNotNull();
+        assertThatExceptionOfType(UnsupportedOperationException.class)
+                .as("attribute is not initialized, so only shared immutable instance available")
+                .isThrownBy(() -> dc.getLeaf(Descriptor.STREET).setValueString("Invalid street!"));
+        assertThat(dc.getLeafValue(Descriptor.STREET, Leaf::getValueString))
+                .as("Fetching default value").isNull();
+
+        String newValue = "Valid street!";
+        assertThatCode(() -> dc.setLeaf(new StringLeaf(Descriptor.STREET, newValue)))
+                .doesNotThrowAnyException();
+        dc.getLeaf(Descriptor.STREET).setValueString(newValue);
+
+        assertThat(dc.getLeafValue(Descriptor.STREET, Leaf::getValueString))
+                .as("Fetching default value").isEqualTo(newValue);
+    }
+
 
     @Test
     void isDirty() {
@@ -32,7 +56,7 @@ public class DefaultContainerTest {
         assertThatThrownBy(() -> dc.setLeaf(Descriptor.AGE, leaf -> leaf.setValueInt(87)))
                 .isInstanceOf(IllegalArgumentException.class);
 
-        assertThatThrownBy(() -> dc.setLeaf(BigDecimalLeaf.EMPTY_VAL))
+        assertThatThrownBy(() -> dc.setLeaf(new BigDecimalLeaf(Descriptor.UNDEF)))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThat(dc.isEmpty()).isTrue();
     }
@@ -333,7 +357,7 @@ public class DefaultContainerTest {
             Leaf dogAge = dogChild.getLeaf(Descriptor.AGE);
             assertThat(dogAge.getValueInt())
                     .as("Disjoint Container tree is not affected by rollback mutation on root node")
-                    .isNotEqualTo(IntLeaf.EMPTY_VAL.getValueInt());
+                    .isNotEqualTo(IntLeaf.EMPTY_VAL_NATIVE);
 
             assertThat(personParent.isChanged()).isFalse();
             assertThat(anyChanged(personParent)).isFalse();

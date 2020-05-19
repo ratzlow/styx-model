@@ -1,23 +1,30 @@
 package net.styx.model;
 
 import net.styx.model.meta.Descriptor;
+import net.styx.model.tree.Container;
 import net.styx.model.tree.DefaultContainer;
 import net.styx.model.tree.Leaf;
 
-public class Book extends DefaultContainer {
+public class Book implements ContainerMixin {
 
     public static final Descriptor DESCRIPTOR = Descriptor.BOOK;
+    private final Container container;
+
 
     public Book() {
-        super(DESCRIPTOR);
+        this(new DefaultContainer(DESCRIPTOR));
     }
 
     public Book(long id) {
-        super(DESCRIPTOR, id);
+        this(new DefaultContainer(DESCRIPTOR, id));
+    }
+
+    public Book(Container container) {
+        this.container = container;
     }
 
     public String getISBN() {
-        return get(Descriptor.ISBN, Leaf::getValueString);
+        return getLeafValue(Descriptor.ISBN, Leaf::getValueString);
     }
 
     public void setISBN(String isbn) {
@@ -26,10 +33,19 @@ public class Book extends DefaultContainer {
 
 
     public String getTitle() {
-        return get(Descriptor.TITLE, Leaf::getValueString);
+        return getLeafValue(Descriptor.TITLE, Leaf::getValueString);
     }
 
     public void setTitle(String title) {
         setLeaf(Descriptor.TITLE, leaf -> leaf.setValueString(title));
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    // bridge
+    //-------------------------------------------------------------------------------------------------
+
+    @Override
+    public Container delegate() {
+        return container;
     }
 }

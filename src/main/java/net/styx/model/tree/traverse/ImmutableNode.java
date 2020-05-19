@@ -9,7 +9,7 @@ import net.styx.model.tree.TreeWalker;
  * Only immutability of this node level is guaranteed, not that of contained children.
  * For object graph all nodes have to be wrapped individually.
  */
-public abstract class ImmutableNode<T extends Node> implements Node{
+public abstract class ImmutableNode<T extends Node> implements Node {
 
     protected T node;
 
@@ -57,7 +57,7 @@ public abstract class ImmutableNode<T extends Node> implements Node{
         return obj instanceof Node && node.equals(obj);
     }
 
-    private void invoke(Runnable operation ) {
+    private void invoke(Runnable operation) {
         if (isEmpty()) {
             operation.run();
         } else {
@@ -66,6 +66,10 @@ public abstract class ImmutableNode<T extends Node> implements Node{
     }
 
     protected boolean prevent() {
-        throw new UnsupportedOperationException("Cannot modify immutable node: " + node);
+        throw new UnsupportedOperationException(exceptionMsg());
+    }
+
+    protected String exceptionMsg() {
+        return "Cannot modify immutable node: " + node;
     }
 }

@@ -1,23 +1,30 @@
 package net.styx.model;
 
 import net.styx.model.meta.Descriptor;
+import net.styx.model.tree.Container;
 import net.styx.model.tree.DefaultContainer;
 import net.styx.model.tree.Leaf;
 
-public class Address extends DefaultContainer {
+public class Address implements ContainerMixin {
 
     public static final Descriptor DESCRIPTOR = Descriptor.ADDRESS;
+    
+    private final Container container;
 
     public Address() {
-        super(DESCRIPTOR);
+        this(new DefaultContainer(DESCRIPTOR));
     }
 
     public Address(long id) {
-        super(DESCRIPTOR, id);
+        this(new DefaultContainer(DESCRIPTOR, id));
+    }
+
+    public Address(Container container) {
+        this.container = container;
     }
 
     public String getStreet() {
-        return get(Descriptor.STREET, Leaf::getValueString);
+        return getLeafValue(Descriptor.STREET, Leaf::getValueString);
     }
 
     public void setStreet(String street) {
@@ -25,7 +32,7 @@ public class Address extends DefaultContainer {
     }
 
     public String getCity() {
-        return get(Descriptor.CITY, Leaf::getValueString);
+        return getLeafValue(Descriptor.CITY, Leaf::getValueString);
     }
 
     public void setCity(String city) {
@@ -33,10 +40,19 @@ public class Address extends DefaultContainer {
     }
 
     public int getZip() {
-        return get(Descriptor.ZIP, Leaf::getValueInt);
+        return getLeafValue(Descriptor.ZIP, Leaf::getValueInt);
     }
 
     public void setZip(int zip) {
         setLeaf(Descriptor.ZIP, leaf -> leaf.setValueInt(zip));
+    }
+    
+    //-------------------------------------------------------------------------------------------------
+    // bridge 
+    //-------------------------------------------------------------------------------------------------
+
+    @Override
+    public Container delegate() {
+        return container;
     }
 }
