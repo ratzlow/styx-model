@@ -1,6 +1,6 @@
-package net.styx.model;
+package net.styx.model.sample;
 
-import net.styx.model.meta.Descriptor;
+import net.styx.model.tree.ContainerMixin;
 import net.styx.model.tree.Container;
 import net.styx.model.tree.DefaultContainer;
 import net.styx.model.tree.Leaf;
@@ -10,7 +10,7 @@ import java.util.Collection;
 
 public class Person implements ContainerMixin {
 
-    private static final Descriptor DESCRIPTOR = Descriptor.PERSON;
+    private static final SampleDescriptor DESCRIPTOR = SampleDescriptor.PERSON;
 
     private final Container container;
 
@@ -28,38 +28,38 @@ public class Person implements ContainerMixin {
     //------------------------------------------------------------------------------------------
 
     public void setName(String name) {
-        setLeaf(Descriptor.NAME, leaf -> leaf.setValueString(name));
+        setLeaf(SampleDescriptor.NAME, leaf -> leaf.setValueString(name));
     }
 
     public String getName() {
-        return getLeafValue(Descriptor.NAME, Leaf::getValueString);
+        return getLeafValue(SampleDescriptor.NAME, Leaf::getValueString);
     }
 
 
     public void setAge(int age) {
-        setLeaf(Descriptor.AGE, leaf -> leaf.setValueInt(age));
+        setLeaf(SampleDescriptor.AGE, leaf -> leaf.setValueInt(age));
     }
 
     public int getAge() {
-        return getLeafValue(Descriptor.AGE, Leaf::getValueInt);
+        return getLeafValue(SampleDescriptor.AGE, Leaf::getValueInt);
     }
 
 
     public void setIncome(BigDecimal income) {
-        setLeaf(Descriptor.INCOME, leaf -> leaf.setValueBigDec(income));
+        setLeaf(SampleDescriptor.INCOME, leaf -> leaf.setValueBigDec(income));
     }
 
     public BigDecimal getIncome() {
-        return getLeafValue(Descriptor.INCOME, Leaf::getValueBigDec);
+        return getLeafValue(SampleDescriptor.INCOME, Leaf::getValueBigDec);
     }
 
 
     public void setGender(Gender gender) {
-        setLeaf(Descriptor.GENDER, leaf -> leaf.setValueEnum(gender));
+        setLeaf(SampleDescriptor.GENDER, leaf -> leaf.setValueEnum(gender));
     }
 
     public Gender getGender() {
-        return getLeafValue(Descriptor.GENDER, Leaf::getValueEnum);
+        return getLeafValue(SampleDescriptor.GENDER, Leaf::getValueEnum);
     }
 
     public void setDog(Dog dog) {
@@ -67,11 +67,11 @@ public class Person implements ContainerMixin {
     }
 
     public Dog getDog() {
-        return getContainer(Descriptor.DOG, Dog.class);
+        return getContainer(SampleDescriptor.DOG, Dog.class);
     }
 
     public Collection<Book> getBooks() {
-        return getGroup(Descriptor.BOOK_GRP, Book.class);
+        return getGroup(SampleDescriptor.BOOK_GRP, Book.class);
     }
 
     //-------------------------------------------------------------------------------------------------

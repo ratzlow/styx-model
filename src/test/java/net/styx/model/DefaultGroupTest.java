@@ -1,6 +1,7 @@
 package net.styx.model;
 
-import net.styx.model.meta.Descriptor;
+import net.styx.model.sample.SampleDescriptor;
+import net.styx.model.sample.Address;
 import net.styx.model.tree.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,7 +24,7 @@ public class DefaultGroupTest {
 
     @BeforeEach
     void before() {
-        addresses = new DefaultGroup<>(Descriptor.ADDRESS_GRP);
+        addresses = new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP);
         first = new Address(nextSeq());
         second = new Address(nextSeq());
     }
@@ -71,7 +72,7 @@ public class DefaultGroupTest {
     @Test
     void iteratorRemoveWillRollback() {
         Collection<Address> addresses = newAddresses(false);
-        Group<Address> group = new DefaultGroup<>(Descriptor.ADDRESS_GRP, addresses);
+        Group<Address> group = new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP, addresses);
         group.commit();
         assertThat(group.size()).isEqualTo(addresses.size());
         assertThat(group).isNotEmpty();
@@ -124,7 +125,7 @@ public class DefaultGroupTest {
         // add dup elements
         Address hannover = newAddress("Hannover", "Messe 1", 1234);
 
-        DefaultGroup<Address> group = new DefaultGroup<>(Descriptor.ADDRESS_GRP);
+        DefaultGroup<Address> group = new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP);
         assertThat(group.add(hannover)).isTrue();
         assertThat(group).hasSize(1);
 
@@ -161,18 +162,18 @@ public class DefaultGroupTest {
 
     @Test
     void dirtyCheckOnInit() {
-        assertThat(new DefaultGroup<>(Descriptor.ADDRESS_GRP).isChanged())
+        assertThat(new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP).isChanged())
                 .as("Empty group is always clean")
                 .isFalse();
 
         Address berlin = newAddress("Berlin", "Kastanienstr. 10", 12345);
         assertThat(berlin.isChanged()).isTrue();
-        DefaultGroup<Address> gr_1 = new DefaultGroup<>(Descriptor.ADDRESS_GRP, List.of(berlin));
+        DefaultGroup<Address> gr_1 = new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP, List.of(berlin));
         assertThat(anyChanged(gr_1))
                 .as("Empty group with dirty element is dirty as well!")
                 .isTrue();
 
-        DefaultGroup<Address> gr_2 = new DefaultGroup<>(Descriptor.ADDRESS_GRP);
+        DefaultGroup<Address> gr_2 = new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP);
         Address paris = newAddress("Paris", "Eifelplatz 1", 2222);
         gr_2.add(paris);
         assertThat(gr_2.isChanged())
@@ -183,7 +184,7 @@ public class DefaultGroupTest {
     @DisplayName("Remove() as reverse op to Add() will clear dirty flag")
     @Test
     void dirtyCheckOnAddRemoveOp() {
-        DefaultGroup<Address> group = new DefaultGroup<>(Descriptor.ADDRESS_GRP);
+        DefaultGroup<Address> group = new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP);
         Address basel = newAddress("Basel", "Rheinufer", 7001);
         group.add(basel);
         assertThat(group.isChanged())
@@ -205,7 +206,7 @@ public class DefaultGroupTest {
         assertThat(initial).noneMatch(Stateful::isChanged);
         assertThat(initial).noneMatch(Stateful::isEmpty);
 
-        Group<Address> group = new DefaultGroup<>(Descriptor.ADDRESS_GRP, initial);
+        Group<Address> group = new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP, initial);
         assertThat(group.isEmpty()).isFalse();
         assertThat(group.isChanged()).as("Group was not yet committed").isTrue();
         assertThat(anyChanged(group)).isTrue();
@@ -230,7 +231,7 @@ public class DefaultGroupTest {
     @Test
     void rollbackAfterRemove() {
         Collection<Address> col = newAddresses(false);
-        Group<Address> group = new DefaultGroup<>(Descriptor.ADDRESS_GRP, col);
+        Group<Address> group = new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP, col);
         group.commit();
         assertThat(anyChanged(group)).isFalse();
 
@@ -246,7 +247,7 @@ public class DefaultGroupTest {
     @Test
     void dirtyCheckOnInlineChange() {
         Collection<Address> col = newAddresses(false);
-        Group<Address> group = new DefaultGroup<>(Descriptor.ADDRESS_GRP, col);
+        Group<Address> group = new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP, col);
 
         assertThat(anyChanged(group.toArray(new Node[0]))).isFalse();
         assertThat(group.isChanged()).isTrue();
@@ -272,7 +273,7 @@ public class DefaultGroupTest {
     @Test
     void rollbackToEmpty() {
         Collection<Address> addresses = newAddresses(false);
-        DefaultGroup<Address> group = new DefaultGroup<>(Descriptor.ADDRESS_GRP);
+        DefaultGroup<Address> group = new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP);
         group.addAll(addresses);
         assertThat(group.isEmpty()).isFalse();
         assertThat(group.isChanged()).isTrue();
@@ -288,7 +289,7 @@ public class DefaultGroupTest {
         Collection<Address> addresses = newAddresses(false);
         assertThat(addresses).allMatch(a -> !a.isChanged());
 
-        Group<Address> group = new DefaultGroup<>(Descriptor.ADDRESS_GRP, addresses);
+        Group<Address> group = new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP, addresses);
         assertThat(group.isEmpty()).isFalse();
         assertThat(group.isChanged()).as("Unchanged elements in new Group").isTrue();
 
@@ -325,7 +326,7 @@ public class DefaultGroupTest {
 
         Address first = addresses.iterator().next();
 
-        Group<Address> group = new DefaultGroup<>(Descriptor.ADDRESS_GRP, addresses);
+        Group<Address> group = new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP, addresses);
         group.addAll(addresses);
         assertThat(group.isEmpty()).isFalse();
         assertThat(group.isChanged())
@@ -369,7 +370,7 @@ public class DefaultGroupTest {
 
     @Test
     void toStringWalker() {
-        Group<?> addresses = new DefaultGroup<>(Descriptor.ADDRESS_GRP, newAddresses(true));
+        Group<?> addresses = new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP, newAddresses(true));
         String msg = Nodes.asString(addresses);
         assertThat(msg).isNotBlank();
         LOGGER.info(msg);

@@ -1,6 +1,7 @@
 package net.styx.model;
 
-import net.styx.model.meta.Descriptor;
+import net.styx.model.sample.SampleDescriptor;
+import net.styx.model.sample.Address;
 import net.styx.model.tree.*;
 import net.styx.model.tree.leaf.LongLeaf;
 import net.styx.model.tree.leaf.StringLeaf;
@@ -14,14 +15,13 @@ import java.util.logging.Logger;
 import static net.styx.model.tree.Nodes.freeze;
 import static org.assertj.core.api.Assertions.*;
 
-// TODO (FRa) : (FRa): check transitive RO mode
 public class MutationControlTest {
 
     static Logger LOGGER = Logger.getLogger(MutationControlTest.class.getCanonicalName());
 
     @Test
     void immutableLeaf() {
-        Leaf leaf = new LongLeaf(Descriptor.UNDEF, 11L);
+        Leaf leaf = new LongLeaf(SampleDescriptor.UNDEF, 11L);
         leaf.setValueLong(22L);
         assertThat(leaf.getValueLong()).isEqualTo(22);
         Leaf frozenLeaf = freeze(leaf);
@@ -32,22 +32,22 @@ public class MutationControlTest {
 
     @Test
     void immutableContainer() {
-        Container frozenContainer = freeze(new DefaultContainer(Descriptor.PERSON));
+        Container frozenContainer = freeze(new DefaultContainer(SampleDescriptor.PERSON));
         assertThat(frozenContainer.isEmpty()).isTrue();
         assertThatCode(frozenContainer::commit).doesNotThrowAnyException();
         assertThatCode(frozenContainer::rollback).doesNotThrowAnyException();
 
         assertThatExceptionOfType(UnsupportedOperationException.class)
-                .isThrownBy(() -> frozenContainer.setContainer(new DefaultContainer(Descriptor.DOG)));
+                .isThrownBy(() -> frozenContainer.setContainer(new DefaultContainer(SampleDescriptor.DOG)));
 
         assertThatExceptionOfType(UnsupportedOperationException.class)
-                .isThrownBy(() -> frozenContainer.setLeaf(new StringLeaf(Descriptor.NAME)));
+                .isThrownBy(() -> frozenContainer.setLeaf(new StringLeaf(SampleDescriptor.NAME)));
 
         assertThatExceptionOfType(UnsupportedOperationException.class)
-                .isThrownBy(() -> frozenContainer.setLeaf(Descriptor.NAME, leaf -> leaf.setValueString("xyz")));
+                .isThrownBy(() -> frozenContainer.setLeaf(SampleDescriptor.NAME, leaf -> leaf.setValueString("xyz")));
 
         assertThatExceptionOfType(UnsupportedOperationException.class)
-                .isThrownBy(() -> frozenContainer.setGroup(new DefaultGroup<>(Descriptor.ADDRESS_GRP)));
+                .isThrownBy(() -> frozenContainer.setGroup(new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP)));
     }
 
     @Test
@@ -59,7 +59,7 @@ public class MutationControlTest {
             addresses.add(address);
         }
 
-        Group<Address> group = new DefaultGroup<>(Descriptor.ADDRESS_GRP, addresses);
+        Group<Address> group = new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP, addresses);
         Address changeAddress = createAddress(addressCount);
 
         group.add(changeAddress);
@@ -78,7 +78,7 @@ public class MutationControlTest {
 
     @Test
     void deepImmutableGroup() {
-        Group<Address> group = new DefaultGroup<>(Descriptor.ADDRESS_GRP,
+        Group<Address> group = new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP,
                 Set.of(createAddress(1), createAddress(2)));
 
         Group<Address> frozenGroup = freeze(group);
@@ -88,9 +88,13 @@ public class MutationControlTest {
         LOGGER.info(() -> Nodes.asString(frozenGroup));
 
         Address address = frozenGroup.iterator().next();
+        assertThatExceptionOfType(UnsupportedOperationException.class)
+                .as("No change at intermediate level!")
+                .isThrownBy(() -> frozenGroup.add(createAddress(3)));
+
         int newZip = address.getZip() * 2;
         assertThatExceptionOfType(UnsupportedOperationException.class)
-                .as("Nodes on all hierarchies must be wrapped to be immutable!")
+                .as("Nodes on all hierarchies must be wrapped to be immutable! Here leafs")
                 .isThrownBy(() -> address.setZip(newZip));
         assertThat(frozenGroup).noneMatch(a -> a.getZip() == newZip);
     }

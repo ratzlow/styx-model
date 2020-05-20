@@ -37,7 +37,7 @@ public class ToStringWalker implements TreeWalker {
     }
 
     private String format(NodeID id) {
-        String s = "{ " + id.getDescriptor().name().toLowerCase();
+        String s = "{ " + id.getDescriptor().shortName().toLowerCase();
         if (id.getIdx() != NodeID.NO_IDX) {
             s += "[" + id.getIdx() + "]=";
         }

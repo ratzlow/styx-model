@@ -1,13 +1,13 @@
-package net.styx.model;
+package net.styx.model.sample;
 
-import net.styx.model.meta.Descriptor;
+import net.styx.model.tree.ContainerMixin;
 import net.styx.model.tree.Container;
 import net.styx.model.tree.DefaultContainer;
 import net.styx.model.tree.Leaf;
 
 public class Address implements ContainerMixin {
 
-    public static final Descriptor DESCRIPTOR = Descriptor.ADDRESS;
+    public static final SampleDescriptor DESCRIPTOR = SampleDescriptor.ADDRESS;
     
     private final Container container;
 
@@ -24,27 +24,27 @@ public class Address implements ContainerMixin {
     }
 
     public String getStreet() {
-        return getLeafValue(Descriptor.STREET, Leaf::getValueString);
+        return getLeafValue(SampleDescriptor.STREET, Leaf::getValueString);
     }
 
     public void setStreet(String street) {
-        setLeaf(Descriptor.STREET, leaf -> leaf.setValueString(street));
+        setLeaf(SampleDescriptor.STREET, leaf -> leaf.setValueString(street));
     }
 
     public String getCity() {
-        return getLeafValue(Descriptor.CITY, Leaf::getValueString);
+        return getLeafValue(SampleDescriptor.CITY, Leaf::getValueString);
     }
 
     public void setCity(String city) {
-        setLeaf(Descriptor.CITY, leaf -> leaf.setValueString(city));
+        setLeaf(SampleDescriptor.CITY, leaf -> leaf.setValueString(city));
     }
 
     public int getZip() {
-        return getLeafValue(Descriptor.ZIP, Leaf::getValueInt);
+        return getLeafValue(SampleDescriptor.ZIP, Leaf::getValueInt);
     }
 
     public void setZip(int zip) {
-        setLeaf(Descriptor.ZIP, leaf -> leaf.setValueInt(zip));
+        setLeaf(SampleDescriptor.ZIP, leaf -> leaf.setValueInt(zip));
     }
     
     //-------------------------------------------------------------------------------------------------

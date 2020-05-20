@@ -1,168 +1,25 @@
 package net.styx.model.meta;
 
-import net.styx.model.*;
 import net.styx.model.tree.Container;
 
-import java.util.*;
+import java.util.Set;
 import java.util.function.Function;
 
-// TODO (FRa) : (FRa): encapsulate techn. Attributes in component? entities with
-public enum Descriptor implements NodeID {
+public interface Descriptor {
 
-    /**
-     * default unset value
-     */
-    UNDEF(-1, "undefinedNode", NodeType.LEAF, DataType.UNDEF),
+    Descriptor UNDEF = null;
 
-    // technical fields
-    VERSION(6, "version", NodeType.LEAF, DataType.INT),
+    int getTagNumber();
 
-    // business fields fields
-    NAME(10, "name", NodeType.LEAF, DataType.STRING),
-    AGE(11, "age", NodeType.LEAF, DataType.INT),
-    INCOME(12, "income", NodeType.LEAF, DataType.BIG_DECIMAL),
-    GENDER(13, "gender", NodeType.LEAF, DataType.ENUM),
+    String shortName();
 
-    STREET(14, "street", NodeType.LEAF, DataType.STRING),
-    ZIP(15, "zip", NodeType.LEAF, DataType.INT),
-    CITY(16, "city", NodeType.LEAF, DataType.STRING),
+    String alias();
 
-    ISBN(20, "isbn", NodeType.LEAF, DataType.STRING),
-    TITLE(21, "title", NodeType.LEAF, DataType.STRING),
+    NodeType getNodeType();
 
-    SIZE(30, "size", NodeType.LEAF, DataType.STRING),
-    COLOR(31, "color", NodeType.LEAF, DataType.ENUM),
+    DataType getDataType();
 
+    Set<Descriptor> getChildren();
 
-    // components
-    DOG(1001, "dog", NodeType.CONTAINER, DataType.UNDEF,
-            Set.of(NAME, AGE), Dog::new),
-
-    ADDRESS(1002, "address", NodeType.CONTAINER, DataType.UNDEF,
-            Set.of(STREET, ZIP, CITY), Address::new),
-
-    BOOK(1003, "book", NodeType.CONTAINER, DataType.UNDEF,
-            Set.of(ISBN, TITLE), Book::new),
-
-    SHOE(1004, "shoe", NodeType.CONTAINER, DataType.UNDEF,
-            Set.of(SIZE, COLOR), Shoe::new),
-
-    // groups
-    ADDRESS_GRP(2001, "addresses", NodeType.GROUP, DataType.UNDEF,
-            Set.of(ADDRESS)),
-
-    FAMILY_GRP(2002, "familyMembers", NodeType.GROUP, DataType.UNDEF,
-            new int[]{3001}),
-
-    BOOK_GRP(2003, "books", NodeType.GROUP, DataType.UNDEF,
-            Set.of(BOOK)),
-
-    SHOE_GRP(2004, "shoes", NodeType.GROUP, DataType.UNDEF,
-            Set.of(SHOE)),
-
-
-    // domain roots => component
-    PERSON(3001, "person", NodeType.CONTAINER, DataType.UNDEF,
-            Set.of(NAME, AGE, INCOME, GENDER, DOG, ADDRESS_GRP, BOOK_GRP, FAMILY_GRP),
-            Person::new);
-
-
-    //---------------------------------------------------------------------------
-    // attributes
-    //---------------------------------------------------------------------------
-
-    private final int tagNumber;
-    private final String propName;
-    private final NodeType nodeType;
-    private final DataType dataType;
-    private final Function<Container, Container> modelFactory;
-    private Set<Descriptor> children;
-    private int[] childTags = new int[0]; // to avoid forward references during compile time
-
-
-    //---------------------------------------------------------------------------
-    // constructors
-    //---------------------------------------------------------------------------
-    // TODO (FRa) : (FRa): consolidate constructors
-    Descriptor(int tagNumber, String propName, NodeType nodeType, DataType type,
-               Set<Descriptor> children,
-               Function<Container, Container> modelFactory) {
-        this.tagNumber = tagNumber;
-        this.propName = propName;
-        this.dataType = type;
-        this.nodeType = nodeType;
-        this.modelFactory = modelFactory;
-        this.children = Collections.unmodifiableSet(children);
-    }
-
-    Descriptor(int tagNumber, String propName, NodeType nodeType, DataType type,
-               Set<Descriptor> children) {
-        this(tagNumber, propName, nodeType, type, children, null);
-    }
-
-    Descriptor(int tagNumber, String propName, NodeType nodeType, DataType dataType) {
-        this(tagNumber, propName, nodeType, dataType, Collections.emptySet(), null);
-    }
-
-    Descriptor(int tagNumber, String propName, NodeType nodeType, DataType dataType, int[] childTags) {
-        this(tagNumber, propName, nodeType, dataType);
-        this.childTags = childTags;
-    }
-
-    //---------------------------------------------------------------------------
-    // API
-    //---------------------------------------------------------------------------
-
-
-    private static Set<Descriptor> resolve(int[] childTag) {
-        Map<Integer, Descriptor> all = new HashMap<>();
-        for (Descriptor value : values()) {
-            all.put(value.tagNumber, value);
-        }
-
-        Set<Descriptor> descriptors = new HashSet<>();
-        for (int tag : childTag) {
-            descriptors.add(all.get(tag));
-        }
-
-        return descriptors;
-    }
-
-
-    //---------------------------------------------------------------------------
-    // API
-    //---------------------------------------------------------------------------
-
-    public int getTagNumber() {
-        return tagNumber;
-    }
-
-    public String getPropName() {
-        return propName;
-    }
-
-    public NodeType getNodeType() {
-        return nodeType;
-    }
-
-    public DataType getDataType() {
-        return dataType;
-    }
-
-    public Set<Descriptor> getChildren() {
-        if (children == null && childTags.length > 0) {
-            children = resolve(childTags);
-        }
-
-        return children;
-    }
-
-    public Function<Container, Container> getDomainModelFactory() {
-        return modelFactory;
-    }
-
-    @Override
-    public Descriptor getDescriptor() {
-        return this;
-    }
+    Function<Container, Container> getDomainModelFactory();
 }

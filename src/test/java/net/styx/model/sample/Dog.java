@@ -1,13 +1,13 @@
-package net.styx.model;
+package net.styx.model.sample;
 
-import net.styx.model.meta.Descriptor;
+import net.styx.model.tree.ContainerMixin;
 import net.styx.model.tree.Container;
 import net.styx.model.tree.DefaultContainer;
 import net.styx.model.tree.Leaf;
 
 public class Dog implements ContainerMixin {
 
-    public static final Descriptor DESCRIPTOR = Descriptor.DOG;
+    public static final SampleDescriptor DESCRIPTOR = SampleDescriptor.DOG;
     private final Container container;
 
     public Dog() {
@@ -23,20 +23,20 @@ public class Dog implements ContainerMixin {
     //------------------------------------------------------------------------------------------
 
     public void setName(String name) {
-        setLeaf(Descriptor.NAME, leaf -> leaf.setValueString(name));
+        setLeaf(SampleDescriptor.NAME, leaf -> leaf.setValueString(name));
     }
 
     public String getName() {
-        return getLeafValue(Descriptor.NAME, Leaf::getValueString);
+        return getLeafValue(SampleDescriptor.NAME, Leaf::getValueString);
     }
 
 
     public void setAge(int age) {
-        setLeaf(Descriptor.AGE, leaf -> leaf.setValueInt(age));
+        setLeaf(SampleDescriptor.AGE, leaf -> leaf.setValueInt(age));
     }
 
     public int getAge() {
-        return getLeafValue(Descriptor.AGE, Leaf::getValueInt);
+        return getLeafValue(SampleDescriptor.AGE, Leaf::getValueInt);
     }
 
     //-------------------------------------------------------------------------------------------------

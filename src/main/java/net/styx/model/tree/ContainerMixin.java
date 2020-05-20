@@ -1,7 +1,6 @@
-package net.styx.model;
+package net.styx.model.tree;
 
 import net.styx.model.meta.NodeID;
-import net.styx.model.tree.*;
 
 import java.util.Iterator;
 import java.util.function.Consumer;

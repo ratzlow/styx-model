@@ -1,6 +1,10 @@
 package net.styx.model;
 
-import net.styx.model.meta.Descriptor;
+import net.styx.model.sample.SampleDescriptor;
+import net.styx.model.sample.Address;
+import net.styx.model.sample.Dog;
+import net.styx.model.sample.Gender;
+import net.styx.model.sample.Person;
 import net.styx.model.tree.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -40,22 +44,22 @@ public class ApiUsageTest {
     @DisplayName("Test type combinations of Group vs. Node!")
     @Test
     void groupTypingVariations() {
-        Group<Leaf> leafs = new DefaultGroup<>(Descriptor.ADDRESS_GRP);
-        Group<Container> containers = new DefaultGroup<>(Descriptor.ADDRESS_GRP);
-        Group<Node> nodes = new DefaultGroup<>(Descriptor.ADDRESS_GRP);
-        Group<DefaultGroup<Node>> groups = new DefaultGroup<>(Descriptor.ADDRESS_GRP, List.of());
+        Group<Leaf> leafs = new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP);
+        Group<Container> containers = new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP);
+        Group<Node> nodes = new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP);
+        Group<DefaultGroup<Node>> groups = new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP, List.of());
         assertThat(groups).isEmpty();
 
 
         manipulate(containers, new Address());
         manipulate(nodes, new Address());
 
-        Collection<Container> addresses1 = manipulate(new DefaultGroup<>(Descriptor.ADDRESS_GRP), new Address());
-        Collection<Address> addresses2 = manipulate(new DefaultGroup<>(Descriptor.ADDRESS_GRP), new Address());
-        Collection<Node> addresses3 = manipulate(new DefaultGroup<>(Descriptor.ADDRESS_GRP), new Address());
+        Collection<Container> addresses1 = manipulate(new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP), new Address());
+        Collection<Address> addresses2 = manipulate(new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP), new Address());
+        Collection<Node> addresses3 = manipulate(new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP), new Address());
 
         Collection<Node> addresses4 =
-                manipulate(new DefaultGroup<>(Descriptor.ADDRESS_GRP), new DefaultContainer(Descriptor.ADDRESS));
+                manipulate(new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP), new DefaultContainer(SampleDescriptor.ADDRESS));
 
         assertThat(List.of(addresses1, addresses2, addresses3, addresses4))
                 .allMatch(g -> g.size() == 1);

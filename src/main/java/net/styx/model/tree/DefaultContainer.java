@@ -1,7 +1,6 @@
 package net.styx.model.tree;
 
 import net.styx.model.meta.DataType;
-import net.styx.model.meta.Descriptor;
 import net.styx.model.meta.NodeID;
 import net.styx.model.tree.leaf.*;
 import net.styx.model.tree.traverse.ImmutableLeaf;
@@ -211,13 +210,13 @@ public class DefaultContainer implements Container {
     // TODO (FRa) : (FRa): inject lookup map
     private static Map<DataType, Leaf> createUnsetLeafs() {
         Map<DataType, Leaf> unsetLeafs = new EnumMap<>(DataType.class);
-        unsetLeafs.put(DataType.BIG_DECIMAL, new BigDecimalLeaf(Descriptor.UNDEF));
-        unsetLeafs.put(DataType.INT, new IntLeaf(Descriptor.UNDEF));
-        unsetLeafs.put(DataType.LONG, new LongLeaf(Descriptor.UNDEF));
-        unsetLeafs.put(DataType.STRING, new StringLeaf(Descriptor.UNDEF));
-        unsetLeafs.put(DataType.ENUM, new EnumLeaf(Descriptor.UNDEF));
+        unsetLeafs.put(DataType.BIG_DECIMAL, new BigDecimalLeaf(NodeID.UNDEF));
+        unsetLeafs.put(DataType.INT, new IntLeaf(NodeID.UNDEF));
+        unsetLeafs.put(DataType.LONG, new LongLeaf(NodeID.UNDEF));
+        unsetLeafs.put(DataType.STRING, new StringLeaf(NodeID.UNDEF));
+        unsetLeafs.put(DataType.ENUM, new EnumLeaf(NodeID.UNDEF));
 
-        unsetLeafs.replaceAll( (dataType, leaf) -> new ImmutableLeaf(leaf) );
+        unsetLeafs.replaceAll((dataType, leaf) -> new ImmutableLeaf(leaf));
         return unsetLeafs;
     }
 

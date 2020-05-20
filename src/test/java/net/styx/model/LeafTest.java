@@ -1,5 +1,6 @@
 package net.styx.model;
 
+import net.styx.model.meta.NodeID;
 import net.styx.model.tree.leaf.StringLeaf;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,16 +12,24 @@ public class LeafTest {
 
     @Test
     void isDirtyOnConstructor() {
-        assertThat(new StringLeaf().isChanged()).isFalse();
-        assertThat(new StringLeaf("Frank").isChanged()).isTrue();
-        assertThat(new StringLeaf("Frank", false).isChanged()).isFalse();
-        assertThat(new StringLeaf("Frank", true).isChanged()).isTrue();
+        assertThat(leaf(null).isChanged()).isFalse();
+        assertThat(leaf("Frank").isChanged()).isTrue();
+        assertThat(leaf("Frank", false).isChanged()).isFalse();
+        assertThat(leaf("Frank", true).isChanged()).isTrue();
+    }
+
+    private StringLeaf leaf(String value, boolean markDirty) {
+        return new StringLeaf(NodeID.UNDEF, value, markDirty);
+    }
+
+    private StringLeaf leaf(String value) {
+        return leaf(value, true);
     }
 
     @DisplayName("!empty && !dirty -> newly instantiated (with markDirty=false) or after commit/rollback to value")
     @Test
     void isNotEmptyAndNotDirty() {
-        var leaf = new StringLeaf("Frank", false);
+        var leaf = leaf("Frank", false);
         assertThat(leaf.isEmpty()).isFalse();
         assertThat(leaf.isChanged()).isFalse();
 
@@ -35,7 +44,7 @@ public class LeafTest {
     @DisplayName("empty && !dirty -> newly instantiated or after commit/rollback to $UNSET value")
     @Test
     void isEmptyAndNotDirty() {
-        var leaf = new StringLeaf("Frank", true);
+        var leaf = leaf("Frank", true);
         assertThat(leaf.isEmpty()).isFalse();
         assertThat(leaf.isChanged()).isTrue();
 
@@ -48,7 +57,7 @@ public class LeafTest {
     @DisplayName("!empty && dirty -> after new value was set")
     @Test
     void isNotEmptyAndDirty() {
-        var leaf = new StringLeaf();
+        var leaf = leaf(null);
         assertThat(leaf.isEmpty()).isTrue();
         assertThat(leaf.isChanged()).isFalse();
 
@@ -61,7 +70,7 @@ public class LeafTest {
     @DisplayName("empty && dirty -> after $UNSET operation applied")
     @Test
     void isEmptyAndDirty() {
-        var leaf = new StringLeaf("Frank", false);
+        var leaf = leaf("Frank", false);
         assertThat(leaf.isEmpty()).isFalse();
         assertThat(leaf.isChanged()).isFalse();
 
@@ -73,7 +82,7 @@ public class LeafTest {
 
     @Test
     void isDirtyOnMod() {
-        var leaf = new StringLeaf("Frank", false);
+        var leaf = leaf("Frank", false);
 
         leaf.setValueString("Frank");
         assertThat(leaf.isChanged()).isFalse();
@@ -94,7 +103,7 @@ public class LeafTest {
 
     @Test
     void isEmpty() {
-        var leaf = new StringLeaf("Frank", false);
+        var leaf = leaf("Frank", false);
         assertThat(leaf.isEmpty()).isFalse();
 
         leaf.setValueString("Isabelle");
@@ -108,7 +117,7 @@ public class LeafTest {
 
     @Test
     void commitFromNullStart() {
-        var leaf = new StringLeaf("Frank");
+        var leaf = leaf("Frank");
         assertThat(leaf.isChanged()).isTrue();
         leaf.commit();
         assertThat(leaf.isChanged()).isFalse();
@@ -118,7 +127,7 @@ public class LeafTest {
 
     @Test
     void commitAfterMod() {
-        var leaf = new StringLeaf("Frank", false);
+        var leaf = leaf("Frank", false);
         assertThat(leaf.isChanged()).isFalse();
         leaf.setValueString("Laeti");
         assertThat(leaf.isChanged()).isTrue();
@@ -133,7 +142,7 @@ public class LeafTest {
 
     @Test
     void rollbackFromNullStart() {
-        var leaf = new StringLeaf("Frank");
+        var leaf = leaf("Frank");
         assertThat(leaf.isChanged()).isTrue();
         leaf.rollback();
         assertThat(leaf.isChanged()).isFalse();
@@ -143,7 +152,7 @@ public class LeafTest {
 
     @Test
     void rollbackAfterMod() {
-        var leaf = new StringLeaf("Frank", false);
+        var leaf = leaf("Frank", false);
         assertThat(leaf.isChanged()).isFalse();
         leaf.setValueString("Laeti");
         assertThat(leaf.isChanged()).isTrue();

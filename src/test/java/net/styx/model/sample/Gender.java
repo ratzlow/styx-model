@@ -1,4 +1,4 @@
-package net.styx.model;
+package net.styx.model.sample;
 
 public enum Gender {
     MALE, FEMALE;
