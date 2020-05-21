@@ -47,6 +47,10 @@ public abstract class ImmutableNode<T extends Node> implements Node {
         node.accept(treeWalker);
     }
 
+    //--------------------------------------------------------------------------------------
+    // Object overrides
+    //--------------------------------------------------------------------------------------
+
     @Override
     public int hashCode() {
         return node.hashCode();
@@ -57,12 +61,9 @@ public abstract class ImmutableNode<T extends Node> implements Node {
         return obj instanceof Node && node.equals(obj);
     }
 
-    private void invoke(Runnable operation) {
-        if (isEmpty()) {
-            operation.run();
-        } else {
-            prevent();
-        }
+    @Override
+    public String toString() {
+        return node.toString();
     }
 
     protected boolean prevent() {
@@ -71,5 +72,13 @@ public abstract class ImmutableNode<T extends Node> implements Node {
 
     protected String exceptionMsg() {
         return "Cannot modify immutable node: " + node;
+    }
+
+    private void invoke(Runnable operation) {
+        if (isEmpty()) {
+            operation.run();
+        } else {
+            prevent();
+        }
     }
 }

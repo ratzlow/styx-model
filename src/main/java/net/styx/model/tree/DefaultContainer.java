@@ -188,6 +188,24 @@ public class DefaultContainer implements Container {
         return store.getLive().values().iterator();
     }
 
+    //--------------------------------------------------------------------------------------
+    // Object overrides
+    //--------------------------------------------------------------------------------------
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DefaultContainer that = (DefaultContainer) o;
+        return nodeID.equals(that.nodeID) &&
+                store.equals(that.store);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(nodeID, store);
+    }
+
     @Override
     public String toString() {
         return new StringJoiner(", ", DefaultContainer.class.getSimpleName() + "[", "]")

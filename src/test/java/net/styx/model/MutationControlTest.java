@@ -1,5 +1,6 @@
 package net.styx.model;
 
+import net.styx.model.meta.NodeID;
 import net.styx.model.sample.SampleDescriptor;
 import net.styx.model.sample.Address;
 import net.styx.model.tree.*;
@@ -21,7 +22,7 @@ public class MutationControlTest {
 
     @Test
     void immutableLeaf() {
-        Leaf leaf = new LongLeaf(SampleDescriptor.UNDEF, 11L);
+        Leaf leaf = new LongLeaf(NodeID.UNDEF, 11L);
         leaf.setValueLong(22L);
         assertThat(leaf.getValueLong()).isEqualTo(22);
         Leaf frozenLeaf = freeze(leaf);

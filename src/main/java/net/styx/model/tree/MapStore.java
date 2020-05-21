@@ -3,6 +3,8 @@ package net.styx.model.tree;
 import net.styx.model.meta.NodeID;
 
 import java.util.Map;
+import java.util.Objects;
+import java.util.StringJoiner;
 
 public class MapStore<E extends Node> implements Stateful {
 
@@ -71,5 +73,33 @@ public class MapStore<E extends Node> implements Stateful {
         if (backup == null) {
             backup = Map.copyOf(live);
         }
+    }
+
+    //--------------------------------------------------------------------------------------
+    // Object overrides
+    //--------------------------------------------------------------------------------------
+
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", MapStore.class.getSimpleName() + "[", "]")
+                .add("created=" + created)
+                .add("backup=" + backup)
+                .add("live=" + live)
+                .toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        MapStore<?> mapStore = (MapStore<?>) o;
+        return created == mapStore.created &&
+                Objects.equals(backup, mapStore.backup) &&
+                live.equals(mapStore.live);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(created, backup, live);
     }
 }

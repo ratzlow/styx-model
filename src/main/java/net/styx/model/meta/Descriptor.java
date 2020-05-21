@@ -7,8 +7,6 @@ import java.util.function.Function;
 
 public interface Descriptor {
 
-    Descriptor UNDEF = null;
-
     int getTagNumber();
 
     String shortName();

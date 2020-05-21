@@ -44,8 +44,7 @@ public class DefaultGroup<E extends Node> implements Group<E> {
         this(nodeID, LinkedHashMap::new, live);
     }
 
-    public DefaultGroup(NodeID nodeID, Supplier<Map<NodeID, E>> generator,
-                        Collection<E> live) {
+    public DefaultGroup(NodeID nodeID, Supplier<Map<NodeID, E>> generator, Collection<E> live) {
         this.nodeID = nodeID;
         this.generator = generator;
         this.acceptedChildDescriptor = getChildDescriptor(nodeID.getDescriptor());
@@ -237,6 +236,34 @@ public class DefaultGroup<E extends Node> implements Group<E> {
         @SuppressWarnings("unchecked")
         Iterator<Node> iter = (Iterator<Node>) iterator();
         return iter;
+    }
+
+    //------------------------------------------------------------------
+    // Object overrides
+    //------------------------------------------------------------------
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DefaultGroup<?> that = (DefaultGroup<?>) o;
+        return nodeID.equals(that.nodeID) &&
+                acceptedChildDescriptor.equals(that.acceptedChildDescriptor) &&
+                store.equals(that.store);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(nodeID, acceptedChildDescriptor, store);
+    }
+
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", DefaultGroup.class.getSimpleName() + "[", "]")
+                .add("nodeID=" + nodeID)
+                .add("acceptedChildDescriptor=" + acceptedChildDescriptor)
+                .add("store=" + store)
+                .toString();
     }
 
     //------------------------------------------------------------------

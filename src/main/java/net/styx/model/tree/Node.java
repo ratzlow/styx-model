@@ -4,16 +4,25 @@ import net.styx.model.meta.NodeID;
 
 import java.util.Iterator;
 
-// TODO (FRa) : (FRa): impl Iterable?!
-public interface Node extends Stateful, Traversable {
+public interface Node extends Stateful {
 
     NodeID getNodeID();
 
+
     Iterator<Node> children();
+
+
+    void accept(TreeWalker treeWalker);
+
 
     default void traverse(TreeWalker treeWalker) {
         traverseTree(this, treeWalker);
     }
+
+
+    //-------------------------------------------------------------------------------------------
+    // internal default implementation
+    //-------------------------------------------------------------------------------------------
 
     private void traverseTree(Node node, TreeWalker treeWalker) {
         node.accept(treeWalker);

@@ -9,14 +9,7 @@ import net.styx.model.tree.Container;
 import java.util.*;
 import java.util.function.Function;
 
-// TODO (FRa) : (FRa): encapsulate techn. Attributes in component?
-//  entities with
 public enum SampleDescriptor implements NodeID, Descriptor {
-
-    /**
-     * default unset value
-     */
-    UNDEF(-1, "undefinedNode", NodeType.LEAF, DataType.UNDEF),
 
     // technical fields
     VERSION(6, "version", NodeType.LEAF, DataType.INT),
@@ -87,30 +80,34 @@ public enum SampleDescriptor implements NodeID, Descriptor {
     //---------------------------------------------------------------------------
     // constructors
     //---------------------------------------------------------------------------
-    // TODO (FRa) : (FRa): consolidate constructors
-    SampleDescriptor(int tagNumber, String propName, NodeType nodeType, DataType type,
-                     Set<SampleDescriptor> children,
-                     Function<Container, Container> modelFactory) {
-        this.tagNumber = tagNumber;
-        this.propName = propName;
-        this.dataType = type;
-        this.nodeType = nodeType;
-        this.modelFactory = modelFactory;
-        this.children = Collections.unmodifiableSet(children);
-    }
-
-    SampleDescriptor(int tagNumber, String propName, NodeType nodeType, DataType type,
-                     Set<SampleDescriptor> children) {
-        this(tagNumber, propName, nodeType, type, children, null);
-    }
 
     SampleDescriptor(int tagNumber, String propName, NodeType nodeType, DataType dataType) {
         this(tagNumber, propName, nodeType, dataType, Collections.emptySet(), null);
     }
 
-    SampleDescriptor(int tagNumber, String propName, NodeType nodeType, DataType dataType, int[] childTags) {
+
+    SampleDescriptor(int tagNumber, String propName, NodeType nodeType, DataType dataType,
+                     Set<SampleDescriptor> children) {
+        this(tagNumber, propName, nodeType, dataType, children, null);
+    }
+
+
+    SampleDescriptor(int tagNumber, String propName, NodeType nodeType, DataType dataType,
+                     int[] childTags) {
         this(tagNumber, propName, nodeType, dataType);
         this.childTags = childTags;
+    }
+
+
+    SampleDescriptor(int tagNumber, String propName, NodeType nodeType, DataType dataType,
+                     Set<SampleDescriptor> children,
+                     Function<Container, Container> modelFactory) {
+        this.tagNumber = tagNumber;
+        this.propName = propName;
+        this.dataType = dataType;
+        this.nodeType = nodeType;
+        this.modelFactory = modelFactory;
+        this.children = Collections.unmodifiableSet(children);
     }
 
     //---------------------------------------------------------------------------
