@@ -52,19 +52,4 @@ public interface Container extends Node {
     <E extends Node> Group<E> getGroup(NodeID nodeID);
 
     <E extends Node> Group<E> getGroup(NodeID nodeID, Class<E> elementClazz);
-
-
-    //------------------------------------------------------------------
-    // common operations
-    //------------------------------------------------------------------
-
-    /**
-     * Remove attribute identified by #descriptor. Similar to setting an attribute to null.
-     * Makes most sense to establish on delegating POJOs the set-to-null contract.
-     *
-     * @param nodeID in dictionary that identifies this node
-     * @return true ... if existing attribute was deleted and changed the state of the node,
-     * false ... if it was not part of the Node and not state change triggered
-     */
-    boolean remove(NodeID nodeID);
 }

@@ -1,5 +1,7 @@
 package net.styx.model.tree;
 
+import net.styx.model.meta.NodeID;
+
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.Iterator;
@@ -63,4 +65,12 @@ public interface Leaf extends Node {
     default Iterator<Node> children() {
         return Collections.emptyIterator();
     }
+
+    /**
+     * @param childNodeID in dictionary that identifies node delete
+     * @return false ... always, since Leafs have no children, this operation will not
+     *                   trigger any effect.
+     */
+    @Override
+    default boolean remove(NodeID childNodeID) { return false; }
 }

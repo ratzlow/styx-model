@@ -16,9 +16,9 @@ import java.util.logging.Logger;
 import static net.styx.model.tree.Nodes.freeze;
 import static org.assertj.core.api.Assertions.*;
 
-public class MutationControlTest {
+public class ImmutabilityTest {
 
-    static Logger LOGGER = Logger.getLogger(MutationControlTest.class.getCanonicalName());
+    static Logger LOGGER = Logger.getLogger(ImmutabilityTest.class.getCanonicalName());
 
     @Test
     void immutableLeaf() {

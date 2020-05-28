@@ -144,7 +144,7 @@ public class DefaultContainer implements Container {
 
     private <E extends Node> Group<E> getGroupInternal(NodeID nodeID) {
         memberCheck(nodeID);
-        Node group = store.getLive().get(nodeID);
+        Node group = store.getLive().computeIfAbsent(nodeID, DefaultGroup::new);
         return asGroup(group);
     }
 

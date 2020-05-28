@@ -110,8 +110,7 @@ public class DefaultGroup<E extends Node> implements Group<E> {
     @Override
     public boolean remove(Object element) {
         E value = typeCheck(element);
-        NodeID key = value.getNodeID();
-        return store.remove(key);
+        return remove(value.getNodeID());
     }
 
     @Override
@@ -212,6 +211,11 @@ public class DefaultGroup<E extends Node> implements Group<E> {
     }
 
     @Override
+    public boolean remove(NodeID childNodeID) {
+        return store.remove(childNodeID);
+    }
+
+    @Override
     public boolean isChanged() {
         return store.isChanged();
     }
@@ -234,8 +238,8 @@ public class DefaultGroup<E extends Node> implements Group<E> {
     @Override
     public Iterator<Node> children() {
         @SuppressWarnings("unchecked")
-        Iterator<Node> iter = (Iterator<Node>) iterator();
-        return iter;
+        Iterator<Node> iterator = (Iterator<Node>) iterator();
+        return iterator;
     }
 
     //------------------------------------------------------------------

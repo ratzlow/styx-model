@@ -4,11 +4,14 @@ import net.styx.model.meta.NodeID;
 import net.styx.model.tree.*;
 
 import java.util.function.Predicate;
+import java.util.logging.Logger;
 
 /**
  * Test first on root node before listener is called for children to ensure testing from top->bottom
  */
 public class IsAnyChangedWalker implements TreeWalker {
+    private static final Logger LOGGER = Logger.getLogger(IsAllEmptyWalker.class.getName());
+
     private final Predicate<Node> isChanged = Stateful::isChanged;
 
     private Node changedNode;
@@ -43,7 +46,7 @@ public class IsAnyChangedWalker implements TreeWalker {
 
     private void testIsChanged(Node node) {
         if (isChanged.test(node)) {
-            System.out.println("Changed node detected: " + node.getNodeID());
+            LOGGER.warning("Changed node detected: " + node.toString());
             changedNode = node;
         }
     }

@@ -1,5 +1,6 @@
 package net.styx.model.tree.traverse;
 
+import net.styx.model.meta.NodeID;
 import net.styx.model.tree.Group;
 import net.styx.model.tree.Node;
 import net.styx.model.tree.TreeWalker;
@@ -119,6 +120,11 @@ public class ImmutableGroup<E extends Node> extends ImmutableNode<Group<E>> impl
     @Override
     public void forEach(Consumer<? super E> action) {
         immutable.forEach(action);
+    }
+
+    @Override
+    public boolean remove(NodeID childNodeID) {
+        return prevent();
     }
 
     @Override
