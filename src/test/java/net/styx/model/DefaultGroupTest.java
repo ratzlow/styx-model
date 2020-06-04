@@ -203,8 +203,8 @@ public class DefaultGroupTest {
         List<Address> initialReversed = new ArrayList<>(initial);
         Collections.reverse(initialReversed);
 
-        assertThat(initial).noneMatch(Stateful::isChanged);
-        assertThat(initial).noneMatch(Stateful::isEmpty);
+        assertThat(initial).noneMatch(StatefulNode::isChanged);
+        assertThat(initial).noneMatch(StatefulNode::isEmpty);
 
         Group<Address> group = new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP, initial);
         assertThat(group.isEmpty()).isFalse();
@@ -322,7 +322,7 @@ public class DefaultGroupTest {
     @Test
     void commitMultipleTimesToEmpty() {
         Collection<Address> addresses = newAddresses(true);
-        assertThat(addresses).allMatch(Stateful::isChanged);
+        assertThat(addresses).allMatch(StatefulNode::isChanged);
 
         Address first = addresses.iterator().next();
 
@@ -385,7 +385,7 @@ public class DefaultGroupTest {
         );
 
         if (!markDirty) {
-            addresses.forEach(Stateful::commit);
+            addresses.forEach(StatefulNode::commit);
         }
 
         return addresses;

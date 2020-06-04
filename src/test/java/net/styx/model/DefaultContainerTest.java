@@ -28,7 +28,7 @@ public class DefaultContainerTest {
         Container container = new DefaultContainer(SampleDescriptor.PERSON);
         container.getGroup(SampleDescriptor.ADDRESS_GRP).add(new Address(1L));
 
-        Group<Node> addresses = container.getGroup(SampleDescriptor.ADDRESS_GRP);
+        Group<StatefulNode> addresses = container.getGroup(SampleDescriptor.ADDRESS_GRP);
         assertThat(addresses).as("Doc:Groups are initialized on demand and NPE safe!").hasSize(1);
 
         assertThat(container.getContainer(SampleDescriptor.DOG)).isNull();

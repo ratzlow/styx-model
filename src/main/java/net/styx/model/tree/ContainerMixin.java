@@ -46,17 +46,17 @@ public interface ContainerMixin extends Container {
     }
 
     @Override
-    default <E extends Node> Container setGroup(Group<E> group) {
+    default <E extends StatefulNode> Container setGroup(Group<E> group) {
         return delegate().setGroup(group);
     }
 
     @Override
-    default <E extends Node> Group<E> getGroup(NodeID nodeID) {
+    default <E extends StatefulNode> Group<E> getGroup(NodeID nodeID) {
         return delegate().getGroup(nodeID);
     }
 
     @Override
-    default <E extends Node> Group<E> getGroup(NodeID nodeID, Class<E> elementClazz) {
+    default <E extends StatefulNode> Group<E> getGroup(NodeID nodeID, Class<E> elementClazz) {
         return delegate().getGroup(nodeID, elementClazz);
     }
 
@@ -71,7 +71,7 @@ public interface ContainerMixin extends Container {
     }
 
     @Override
-    default Iterator<Node> children() {
+    default Iterator<StatefulNode> children() {
         return delegate().children();
     }
 

@@ -70,7 +70,7 @@ public class MapStoreUsageTest {
          * node:(a) -a +a == node(a) ... after the intermediate operations,
          * initial change/dirty properties should apply
          */
-        private void removeIsSymmetricToAddOnInitializedNode(Node parent,
+        private void removeIsSymmetricToAddOnInitializedNode(StatefulNode parent,
                                                              Runnable parentModification,
                                                              NodeID childNodeID) {
             parent.commit();
@@ -96,7 +96,7 @@ public class MapStoreUsageTest {
          * node:() +a -a == node() ... after the intermediate operations,
          * initial change/dirty properties should apply
          */
-        private void removeIsSymmetricToAddOnEmptyNode(Node parent,
+        private void removeIsSymmetricToAddOnEmptyNode(StatefulNode parent,
                                                        Runnable parentModification,
                                                        NodeID childNodeID) {
             // start with empty container

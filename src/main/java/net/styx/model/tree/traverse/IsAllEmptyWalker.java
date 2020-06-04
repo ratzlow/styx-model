@@ -9,7 +9,7 @@ import java.util.function.Predicate;
  * Test first on root node before listener is called for children to ensure testing from top->bottom
  */
 public class IsAllEmptyWalker implements TreeWalker {
-    private final Predicate<Node> isEmpty = Stateful::isEmpty;
+    private final Predicate<StatefulNode> isEmpty = StatefulNode::isEmpty;
 
     private Node notEmptyNode;
 
@@ -43,7 +43,7 @@ public class IsAllEmptyWalker implements TreeWalker {
         return isEmpty;
     }
 
-    private void testIsChanged(Node node) {
+    private void testIsChanged(StatefulNode node) {
         if (!isEmpty.test(node)) {
             notEmptyNode = node;
         }

@@ -4,11 +4,11 @@ import net.styx.model.meta.NodeID;
 
 import java.util.Iterator;
 
-public interface Node extends Stateful {
+public interface Node<T extends Node<T>> {
 
     NodeID getNodeID();
 
-    Iterator<Node> children();
+    Iterator<T> children();
 
     /**
      * Remove attribute identified by #descriptor. Similar to setting an attribute to null.
@@ -30,11 +30,11 @@ public interface Node extends Stateful {
     // internal default implementation
     //-------------------------------------------------------------------------------------------
 
-    private void traverseTree(Node node, TreeWalker treeWalker) {
+    private void traverseTree(Node<T> node, TreeWalker treeWalker) {
         node.accept(treeWalker);
 
-        for (Iterator<Node> iterator = node.children(); iterator.hasNext() && treeWalker.proceed(); ) {
-            Node child = iterator.next();
+        for (Iterator<T> iterator = node.children(); iterator.hasNext() && treeWalker.proceed(); ) {
+            T child = iterator.next();
             traverseTree(child, treeWalker);
         }
 

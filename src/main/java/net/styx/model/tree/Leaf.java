@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.Iterator;
 
-public interface Leaf extends Node {
+public interface Leaf extends StatefulNode {
 
     default void setValueString(String value) {
         throw new UnsupportedOperationException(getNodeID().getDescriptor().toString());
@@ -62,7 +62,7 @@ public interface Leaf extends Node {
     }
 
     @Override
-    default Iterator<Node> children() {
+    default Iterator<StatefulNode> children() {
         return Collections.emptyIterator();
     }
 

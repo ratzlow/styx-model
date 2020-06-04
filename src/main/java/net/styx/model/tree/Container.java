@@ -5,7 +5,7 @@ import net.styx.model.meta.NodeID;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public interface Container extends Node {
+public interface Container extends StatefulNode {
 
     //------------------------------------------------------------------
     // Leaf accessors
@@ -43,13 +43,13 @@ public interface Container extends Node {
     // Group accessors
     //------------------------------------------------------------------
 
-    <E extends Node> Container setGroup(Group<E> group);
+    <E extends StatefulNode> Container setGroup(Group<E> group);
 
     /**
      * @param nodeID identifier of item to fetch or create
      * @return either existing or lazily created {@link Group} container.
      */
-    <E extends Node> Group<E> getGroup(NodeID nodeID);
+    <E extends StatefulNode> Group<E> getGroup(NodeID nodeID);
 
-    <E extends Node> Group<E> getGroup(NodeID nodeID, Class<E> elementClazz);
+    <E extends StatefulNode> Group<E> getGroup(NodeID nodeID, Class<E> elementClazz);
 }

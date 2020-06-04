@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
 
-public class MapStore<E extends Node> implements Stateful {
+public class MapStore<E extends Stateful> implements Stateful {
 
     private boolean created = true;
 
@@ -65,7 +65,7 @@ public class MapStore<E extends Node> implements Stateful {
 
     boolean remove(NodeID nodeID) {
         checkBackup();
-        Node removed = live.remove(nodeID);
+        E removed = live.remove(nodeID);
         return removed != null;
     }
 

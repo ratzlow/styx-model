@@ -19,7 +19,7 @@ import static java.util.stream.Collectors.toSet;
  *
  * @param <E> the elements stored, which can be identified by their key
  */
-public class DefaultGroup<E extends Node> implements Group<E> {
+public class DefaultGroup<E extends StatefulNode> implements Group<E> {
 
     private final NodeID nodeID;
     private final Descriptor acceptedChildDescriptor;
@@ -236,11 +236,12 @@ public class DefaultGroup<E extends Node> implements Group<E> {
     }
 
     @Override
-    public Iterator<Node> children() {
+    public Iterator<StatefulNode> children() {
         @SuppressWarnings("unchecked")
-        Iterator<Node> iterator = (Iterator<Node>) iterator();
+        Iterator<StatefulNode> iterator = (Iterator<StatefulNode>) iterator();
         return iterator;
     }
+
 
     //------------------------------------------------------------------
     // Object overrides

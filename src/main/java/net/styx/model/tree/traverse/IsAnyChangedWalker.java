@@ -12,9 +12,9 @@ import java.util.logging.Logger;
 public class IsAnyChangedWalker implements TreeWalker {
     private static final Logger LOGGER = Logger.getLogger(IsAllEmptyWalker.class.getName());
 
-    private final Predicate<Node> isChanged = Stateful::isChanged;
+    private final Predicate<StatefulNode> isChanged = StatefulNode::isChanged;
 
-    private Node changedNode;
+    private Node<?> changedNode;
 
     @Override
     public void onEnter(Leaf leaf) {
@@ -44,7 +44,7 @@ public class IsAnyChangedWalker implements TreeWalker {
     }
 
 
-    private void testIsChanged(Node node) {
+    private void testIsChanged(StatefulNode node) {
         if (isChanged.test(node)) {
             LOGGER.warning("Changed node detected: " + node.toString());
             changedNode = node;

@@ -46,8 +46,8 @@ public class ApiUsageTest {
     void groupTypingVariations() {
         Group<Leaf> leafs = new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP);
         Group<Container> containers = new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP);
-        Group<Node> nodes = new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP);
-        Group<DefaultGroup<Node>> groups = new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP, List.of());
+        Group<StatefulNode> nodes = new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP);
+        Group<DefaultGroup<StatefulNode>> groups = new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP, List.of());
         assertThat(groups).isEmpty();
 
 
@@ -56,9 +56,9 @@ public class ApiUsageTest {
 
         Collection<Container> addresses1 = manipulate(new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP), new Address());
         Collection<Address> addresses2 = manipulate(new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP), new Address());
-        Collection<Node> addresses3 = manipulate(new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP), new Address());
+        Collection<StatefulNode> addresses3 = manipulate(new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP), new Address());
 
-        Collection<Node> addresses4 =
+        Collection<StatefulNode> addresses4 =
                 manipulate(new DefaultGroup<>(SampleDescriptor.ADDRESS_GRP), new DefaultContainer(SampleDescriptor.ADDRESS));
 
         assertThat(List.of(addresses1, addresses2, addresses3, addresses4))
@@ -71,7 +71,7 @@ public class ApiUsageTest {
         assertThat(List.of(unboundGroup, rawGroup)).allMatch(Group::isEmpty);
     }
 
-    private <E extends Node> Group<E> manipulate(Group<E> group, E element) {
+    private <E extends StatefulNode> Group<E> manipulate(Group<E> group, E element) {
         group.add(element);
         group.remove(element);
         group.add(element);

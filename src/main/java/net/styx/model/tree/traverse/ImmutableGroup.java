@@ -3,6 +3,7 @@ package net.styx.model.tree.traverse;
 import net.styx.model.meta.NodeID;
 import net.styx.model.tree.Group;
 import net.styx.model.tree.Node;
+import net.styx.model.tree.StatefulNode;
 import net.styx.model.tree.TreeWalker;
 
 import java.util.Collection;
@@ -19,7 +20,7 @@ import java.util.stream.Stream;
  * 
  * @param <E> sub class of a {@link Node}
  */
-public class ImmutableGroup<E extends Node> extends ImmutableNode<Group<E>> implements Group<E> {
+public class ImmutableGroup<E extends StatefulNode> extends ImmutableNode<Group<E>> implements Group<E> {
 
     private final Collection<E> immutable;
 
@@ -128,9 +129,9 @@ public class ImmutableGroup<E extends Node> extends ImmutableNode<Group<E>> impl
     }
 
     @Override
-    public Iterator<Node> children() {
+    public Iterator<StatefulNode> children() {
         @SuppressWarnings("unchecked")
-        Iterator<Node> iter = (Iterator<Node>) iterator();
+        Iterator<StatefulNode> iter = (Iterator<StatefulNode>) iterator();
         return iter;
     }
 

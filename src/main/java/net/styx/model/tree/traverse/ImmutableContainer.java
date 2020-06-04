@@ -12,7 +12,7 @@ public class ImmutableContainer extends ImmutableNode<Container> implements Cont
 
     private final Container immutable;
 
-    public ImmutableContainer(Container node, Collection<Node> immutableChildren) {
+    public ImmutableContainer(Container node, Collection<StatefulNode> immutableChildren) {
         super(node);
         immutable = new DefaultContainer(node.getNodeID(), immutableChildren);
     }
@@ -53,17 +53,17 @@ public class ImmutableContainer extends ImmutableNode<Container> implements Cont
     }
 
     @Override
-    public <E extends Node> Container setGroup(Group<E> group) {
+    public <E extends StatefulNode> Container setGroup(Group<E> group) {
         throw new UnsupportedOperationException(exceptionMsg());
     }
 
     @Override
-    public <E extends Node> Group<E> getGroup(NodeID nodeID) {
+    public <E extends StatefulNode> Group<E> getGroup(NodeID nodeID) {
         return immutable.getGroup(nodeID);
     }
 
     @Override
-    public <E extends Node> Group<E> getGroup(NodeID nodeID, Class<E> elementClazz) {
+    public <E extends StatefulNode> Group<E> getGroup(NodeID nodeID, Class<E> elementClazz) {
         return immutable.getGroup(nodeID, elementClazz);
     }
 
@@ -73,7 +73,7 @@ public class ImmutableContainer extends ImmutableNode<Container> implements Cont
     }
 
     @Override
-    public Iterator<Node> children() {
+    public Iterator<StatefulNode> children() {
         return immutable.children();
     }
 

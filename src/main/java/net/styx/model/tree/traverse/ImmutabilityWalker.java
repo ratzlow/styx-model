@@ -11,7 +11,7 @@ import java.util.logging.Logger;
 public class ImmutabilityWalker implements TreeWalker {
     private static final Logger LOGGER = Logger.getLogger(ImmutabilityWalker.class.getCanonicalName());
 
-    private final Deque<Node> visitedNodes = new ArrayDeque<>();
+    private final Deque<StatefulNode> visitedNodes = new ArrayDeque<>();
 
     @Override
     public void onEnter(Leaf leaf) {
@@ -22,7 +22,6 @@ public class ImmutabilityWalker implements TreeWalker {
     @Override
     public void onEnter(Container container) {
         LOGGER.info(() -> "Enter container=" + container.getNodeID());
-
         visitedNodes.push(container);
     }
 
@@ -46,7 +45,7 @@ public class ImmutabilityWalker implements TreeWalker {
         }
     }
 
-    public Node getImmutableNode() {
+    public StatefulNode getImmutableNode() {
         if (visitedNodes.size() != 1) {
             String msg = "Stream of nodes could not be reduced to tree with single root node";
             throw new IllegalStateException(msg);
@@ -55,11 +54,11 @@ public class ImmutabilityWalker implements TreeWalker {
     }
 
 
-    private Node immutableGroup(Node group, Collection<Node> children) {
-        return new ImmutableGroup<>((Group<Node>) group, children);
+    private StatefulNode immutableGroup(StatefulNode group, Collection<StatefulNode> children) {
+        return new ImmutableGroup<>((Group<StatefulNode>) group, children);
     }
 
-    private Node immutableContainer(Node container, Collection<Node> children) {
+    private StatefulNode immutableContainer(StatefulNode container, Collection<StatefulNode> children) {
         Container immutableContainer = new ImmutableContainer((Container) container, children);
         return container.getNodeID().getDescriptor().getDomainModelFactory().apply(immutableContainer);
     }
@@ -77,12 +76,12 @@ public class ImmutabilityWalker implements TreeWalker {
     // TODO (FRa) : (FRa): perf needs to touch each node with push, peek, pop, push;
     //  should be more efficient with simple recursion
     private void replaceSubTree(NodeID nodeID,
-                                BiFunction<Node, Collection<Node>, Node> immutableNodeGenerator) {
+                                BiFunction<StatefulNode, Collection<StatefulNode>, StatefulNode> immutableNodeGenerator) {
 
-        Collection<Node> immutableChildren = new ArrayDeque<>();
-        Node parent = null;
+        Collection<StatefulNode> immutableChildren = new ArrayDeque<>();
+        StatefulNode parent = null;
         while (parent == null) {
-            Node top = visitedNodes.pop();
+            StatefulNode top = visitedNodes.pop();
             if (top.getNodeID().equals(nodeID)) {
                 parent = top;
             } else {
@@ -90,7 +89,7 @@ public class ImmutabilityWalker implements TreeWalker {
             }
         }
 
-        Node immutableParent = immutableNodeGenerator.apply(parent, immutableChildren);
+        StatefulNode immutableParent = immutableNodeGenerator.apply(parent, immutableChildren);
 
         visitedNodes.push(immutableParent);
     }

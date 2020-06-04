@@ -3,7 +3,7 @@ Applications work with domain models that are usually very specific to their tar
 often lack generic APIs. This is pretty natural, since the closer the model is to a problem domain, 
 the harder it is to keep it generic.
 The project serves as a playground to work out a design that supports a number of features along a
-simple sample model. By model we mean **data structure**.
+simple sample model. By model, we mean **data structure**.
 Ultimately the building blocks might be combined with code generators.
 
 Of course the design is very opinionated as features come always on a price!
@@ -110,7 +110,7 @@ declared in a generic way to allow code generation.
     - [x] changed ... data was un/set (a.k.a "dirty flag")
     - [x] commit/rollback ... to apply/revert recent model changes in memory
     - [ ] diff ... extract changed structures in any combination of AND/OR/NOT(before,after)
-    - [ ] freeze ... prevent a node/leaf to be mutated
+    - [x] freeze ... prevent a node/leaf to be mutated
     - [ ] copy constructors ... to create im/mutable clones
     
 - [ ] Nodes might have a version and different version schemes might be used (pluggable). 
@@ -120,6 +120,7 @@ declared in a generic way to allow code generation.
     - Only one version on aggregate root is maintained
  
 ## Optional features
+... more unlikely to be addressed here, since this is more application specific.
 - [ ] Pending values ... are of interest in scenarios that involve review cycles.
     E.g. a requested 'Person.name' change might involve an approve/reject step. So until the name 
     change is approved the new name is pending (= inactive). On approval - the current name is replaced 
@@ -144,12 +145,11 @@ declared in a generic way to allow code generation.
 - recycle objects
 - avoid auto boxing
 - init maps on demand: e.g. DataContainer, Group
-- lazy init based on test evidence, in the meanwhile remove lazy init for predictability 
+- lazy init based on test evidence, in the meanwhile remove lazy init for predictability
+- init maps with max attribute number size to avoid resizing
 
 ## Gaps in model design
 - missing: support component A has named references B.1 and B.2 
   (e.g. Person has private Address and work Address)
-- move all classes behind interface to allow extension
-- convert Descriptor to interface to allow enum vs. class hierarchy for meta model
 - make it usable as library vs. framework
 - efficient extension model for object vs. native values

@@ -2,6 +2,7 @@ package net.styx.model.tree.traverse;
 
 import net.styx.model.meta.NodeID;
 import net.styx.model.tree.Node;
+import net.styx.model.tree.StatefulNode;
 import net.styx.model.tree.TreeWalker;
 
 /**
@@ -9,7 +10,7 @@ import net.styx.model.tree.TreeWalker;
  * Only immutability of this node level is guaranteed, not that of contained children.
  * For object graph all nodes have to be wrapped individually.
  */
-public abstract class ImmutableNode<T extends Node> implements Node {
+public abstract class ImmutableNode<T extends StatefulNode> implements StatefulNode {
 
     protected T node;
 

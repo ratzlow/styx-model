@@ -24,7 +24,7 @@ public class DefaultContainer implements Container {
     private static final Map<DataType, Function<NodeID, Leaf>> LEAF_GENERATORS = createLeafGenerators();
 
     private final NodeID nodeID;
-    private final MapStore<Node> store;
+    private final MapStore<StatefulNode> store;
 
 
     //------------------------------------------------------------------------------
@@ -39,11 +39,11 @@ public class DefaultContainer implements Container {
         this(new IdxNodeID(nodeID.getDescriptor(), idx), emptyList());
     }
 
-    public DefaultContainer(NodeID nodeID, Collection<Node> children) {
+    public DefaultContainer(NodeID nodeID, Collection<StatefulNode> children) {
         this.nodeID = nodeID;
 
-        Map<NodeID, Node> allNodes = children.stream().collect(
-                toMap(Node::getNodeID, Function.identity(),
+        Map<NodeID, StatefulNode> allNodes = children.stream().collect(
+                toMap(StatefulNode::getNodeID, Function.identity(),
                         (existing, replacement) -> existing, HashMap::new)
         );
         this.store = new MapStore<>(allNodes);
@@ -84,7 +84,7 @@ public class DefaultContainer implements Container {
         memberCheck(nodeID);
         store.checkBackup();
         Function<NodeID, Leaf> leafGenerator = LEAF_GENERATORS.get(nodeID.getDescriptor().getDataType());
-        Node node = store.getLive().computeIfAbsent(nodeID, leafGenerator);
+        StatefulNode node = store.getLive().computeIfAbsent(nodeID, leafGenerator);
         dispatchSet.accept(asLeaf(node));
 
         return this;
@@ -119,12 +119,12 @@ public class DefaultContainer implements Container {
     @Override
     public Container getContainer(NodeID nodeID) {
         memberCheck(nodeID);
-        Node node = store.getLive().get(nodeID);
+        StatefulNode node = store.getLive().get(nodeID);
         return asContainer(node);
     }
 
     @Override
-    public <E extends Node> Container setGroup(Group<E> group) {
+    public <E extends StatefulNode> Container setGroup(Group<E> group) {
         memberCheck(group.getNodeID());
         store.checkBackup();
         store.getLive().put(group.getNodeID(), group);
@@ -133,18 +133,18 @@ public class DefaultContainer implements Container {
     }
 
     @Override
-    public <E extends Node> Group<E> getGroup(NodeID nodeID) {
+    public <E extends StatefulNode> Group<E> getGroup(NodeID nodeID) {
         return getGroupInternal(nodeID);
     }
 
     @Override
-    public <E extends Node> Group<E> getGroup(NodeID nodeID, Class<E> elementClazz) {
+    public <E extends StatefulNode> Group<E> getGroup(NodeID nodeID, Class<E> elementClazz) {
         return getGroupInternal(nodeID);
     }
 
-    private <E extends Node> Group<E> getGroupInternal(NodeID nodeID) {
+    private <E extends StatefulNode> Group<E> getGroupInternal(NodeID nodeID) {
         memberCheck(nodeID);
-        Node group = store.getLive().computeIfAbsent(nodeID, DefaultGroup::new);
+        StatefulNode group = store.getLive().computeIfAbsent(nodeID, DefaultGroup::new);
         return asGroup(group);
     }
 
@@ -184,7 +184,7 @@ public class DefaultContainer implements Container {
     }
 
     @Override
-    public Iterator<Node> children() {
+    public Iterator<StatefulNode> children() {
         return store.getLive().values().iterator();
     }
 
@@ -249,15 +249,15 @@ public class DefaultContainer implements Container {
         return generators;
     }
 
-    private Leaf asLeaf(Node node) {
+    private Leaf asLeaf(StatefulNode node) {
         return node != null ? (Leaf) node : null;
     }
 
-    private Container asContainer(Node node) {
+    private Container asContainer(StatefulNode node) {
         return node != null ? (Container) node : null;
     }
 
-    private <E extends Node> Group<E> asGroup(Node node) {
+    private <E extends StatefulNode> Group<E> asGroup(StatefulNode node) {
         return node != null ? Group.class.cast(node) : null;
     }
 }
