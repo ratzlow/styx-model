@@ -11,7 +11,7 @@ import java.util.function.Predicate;
 public class IsAllEmptyWalker implements TreeWalker {
     private final Predicate<StatefulNode> isEmpty = StatefulNode::isEmpty;
 
-    private Node notEmptyNode;
+    private Node<?> initializedNode;
 
 
     @Override
@@ -35,9 +35,9 @@ public class IsAllEmptyWalker implements TreeWalker {
 
     @Override
     public boolean proceed() {
-        boolean isEmpty = notEmptyNode != null;
+        boolean isEmpty = initializedNode != null;
         if (isEmpty) {
-            System.out.println("First non-empty node detected: " + notEmptyNode.getNodeID());
+            System.out.println("First non-empty node detected: " + initializedNode.getNodeID());
         }
 
         return isEmpty;
@@ -45,7 +45,7 @@ public class IsAllEmptyWalker implements TreeWalker {
 
     private void testIsChanged(StatefulNode node) {
         if (!isEmpty.test(node)) {
-            notEmptyNode = node;
+            initializedNode = node;
         }
     }
 }

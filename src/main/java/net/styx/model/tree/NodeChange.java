@@ -1,12 +1,12 @@
 package net.styx.model.tree;
 
-import net.styx.model.tree.traverse.Operation;
+import net.styx.model.tree.diff.TreeDiff;
 
 public class NodeChange {
     private final Node node;
-    private final Operation operation;
+    private final TreeDiff.Operation operation;
 
-    public NodeChange(Node node, Operation operation) {
+    public NodeChange(Node node, TreeDiff.Operation operation) {
         this.node = node;
         this.operation = operation;
     }
@@ -15,7 +15,7 @@ public class NodeChange {
         return node;
     }
 
-    public Operation getOperation() {
+    public TreeDiff.Operation getOperation() {
         return operation;
     }
 }
