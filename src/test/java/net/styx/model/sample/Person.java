@@ -1,85 +1,41 @@
 package net.styx.model.sample;
 
-import net.styx.model.tree.ContainerMixin;
-import net.styx.model.tree.Container;
-import net.styx.model.tree.DefaultContainer;
-import net.styx.model.tree.Leaf;
+import net.styx.model.changelog.NodePath;
+import net.styx.model.changelog.StateTracker;
+import net.styx.model.sample.meta.PersonDef;
 
-import java.math.BigDecimal;
-import java.util.Collection;
+public class Person {
+    private final PersonDef def;
+    private final NodePath<PersonDef> path;
+    private final StateTracker tracker;
 
-public class Person implements ContainerMixin {
-
-    private static final SampleDescriptor DESCRIPTOR = SampleDescriptor.PERSON;
-
-    private final Container container;
-
-
-    public Person() {
-        this(new DefaultContainer(DESCRIPTOR));
+    public Person(NodePath<PersonDef> path, StateTracker stateTracker) {
+        this.path = path;
+        this.def = path.getLeaf().def();
+        this.tracker = stateTracker;
     }
-
-    public Person(Container container) {
-        this.container = container;
+    
+    public String getName() {
+        return tracker.get(path, def.name());
     }
-
-    //------------------------------------------------------------------------------------------
-    // semantic API
-    //------------------------------------------------------------------------------------------
 
     public void setName(String name) {
-        setLeaf(SampleDescriptor.NAME, leaf -> leaf.setValueString(name));
+        tracker.set(path, def.name(), name);
     }
 
-    public String getName() {
-        return getLeafValue(SampleDescriptor.NAME, Leaf::getValueString);
+    public Address getHome() {
+        return tracker.get(path, def.home());
     }
 
-
-    public void setAge(int age) {
-        setLeaf(SampleDescriptor.AGE, leaf -> leaf.setValueInt(age));
+    public void setHome(Address home) {
+        tracker.set(path, def.home(), home);
     }
 
-    public int getAge() {
-        return getLeafValue(SampleDescriptor.AGE, Leaf::getValueInt);
+    public Address getWork() {
+        return tracker.get(path, def.work());
     }
 
-
-    public void setIncome(BigDecimal income) {
-        setLeaf(SampleDescriptor.INCOME, leaf -> leaf.setValueBigDec(income));
-    }
-
-    public BigDecimal getIncome() {
-        return getLeafValue(SampleDescriptor.INCOME, Leaf::getValueBigDec);
-    }
-
-
-    public void setGender(Gender gender) {
-        setLeaf(SampleDescriptor.GENDER, leaf -> leaf.setValueEnum(gender));
-    }
-
-    public Gender getGender() {
-        return getLeafValue(SampleDescriptor.GENDER, Leaf::getValueEnum);
-    }
-
-    public void setDog(Dog dog) {
-        setContainer(dog);
-    }
-
-    public Dog getDog() {
-        return getContainer(SampleDescriptor.DOG, Dog.class);
-    }
-
-    public Collection<Book> getBooks() {
-        return getGroup(SampleDescriptor.BOOK_GRP, Book.class);
-    }
-
-    //-------------------------------------------------------------------------------------------------
-    // bridge 
-    //-------------------------------------------------------------------------------------------------
-
-    @Override
-    public Container delegate() {
-        return container;
+    public void setWork(Address work) {
+        tracker.set(path, def.work(), work);
     }
 }

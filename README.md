@@ -3,7 +3,7 @@ Applications work with domain models that are usually very specific to their tar
 often lack generic APIs. This is pretty natural, since the closer the model is to a problem domain, 
 the harder it is to keep it generic.
 The project serves as a playground to work out a design that supports a number of features along a
-simple sample model. By model, we mean **data structure**.
+simple sample model. By model, we mean **object graph**.
 Ultimately the building blocks might be combined with code generators.
 
 Of course the design is very opinionated as features come always on a price!
@@ -17,16 +17,15 @@ Of course the design is very opinionated as features come always on a price!
 In the first place it is a personal experimental ground. You can borrow ideas and concepts but 
 nothing is "ready-as-a-lib" - here.
 
-In case you have a rather sophisticated graph-based data model and you need to:
+In case you have a rather sophisticated graph-based data model and need to:
 - track changes
 - diff recursively between versions
 - want to serialize your (sub)graph without resorting to reflection
 - compress your graph to the min attribute set
 - support transactional semantic on your graph with commit/rollback
 - version changed nodes
-- back it by a meta model
-- generate domain classes and meta model from structured data
-
+- describe it by a meta model
+- want a generic structure complementing your domain model
 
 ## Typical use cases
 - model manipulated in state engines
@@ -34,12 +33,16 @@ In case you have a rather sophisticated graph-based data model and you need to:
 - central governance of models in a structured format (e.g. xml, json, xls)
 - if you prefer design patterns over annotations and reflections ;)
 
+## Constraints
+- every graph has 1 controlling root
+- associations between multiple roots have to be resolved externally (e.g. via repository lookup)
+- every aggregate is self-contained: no sharing of nodes across aggregates - except immutable leaf values
 
 ## Sample domain model
 The focus is to cover standard requirements around data structures used to reflect a model. 
 Such as:
 - values ... primitives and specific types
-- containers ... a combination of values and other containers
+- containers ... fixed combination of values and other containers
 - associations ... form a graph of containers
 - types ... reflecting the domain
 - idiomatic ... the model should feel natural and not impaired by some underlying framework
@@ -50,10 +53,10 @@ different kind of relationships.
  
 ![Sample model entities](./doc/pics/1_small.png)
 
-### Relationships types
-- 0..1 ... optional association by unique reference from 1 container to another by default name (Person -> Dog)
+### Relationship types
+- 0..1 ... optional association by unique reference from 1 container to another. Default name is type name (Person -> Dog)
 - 0..n ... from 1 container to (potentially empty) collection of containers by default name (Person -> Books) 
-- 0..1 ... different semantic containers type by reference (Person -> homeAddress; Person -> workAddress)
+- 0..1 ... different semantic containers type by reference (Person -> home; Person -> work)
 - 0..n ... different semantic collections type by reference (Person -> leisureShoes; Person -> businessShoes)
 - 0..n ... recursive relation to collection of same type (Person -> family)
 
@@ -113,16 +116,11 @@ declared in a generic way to allow code generation.
     - [x] freeze ... prevent a node/leaf to be mutated
     - [ ] copy constructors ... to create im/mutable clones
     
-- [ ] Nodes might have a version and different version schemes might be used (pluggable). 
-    Versions start with -1 (unsaved) and increment by 1 on any change commit.
-    - Version will be incremented if one of its direct children changed. So one graph would maintain
-        multiple versions.
-    - Only one version on aggregate root is maintained
  
 ## Optional features
 ... more unlikely to be addressed here, since this is more application specific.
 - [ ] Pending values ... are of interest in scenarios that involve review cycles.
-    E.g. a requested 'Person.name' change might involve an approve/reject step. So until the name 
+    E.g. a requested 'Person.name' change might involve an approval / reject step. So until the name 
     change is approved the new name is pending (= inactive). On approval - the current name is replaced 
     with the new one. If rejected - the new name value is discarded and the current one is preserved. 
     If multiple such fields exist, a generic API activates/discards all pending values.

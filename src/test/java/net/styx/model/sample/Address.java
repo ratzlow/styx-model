@@ -1,58 +1,25 @@
 package net.styx.model.sample;
 
-import net.styx.model.tree.ContainerMixin;
-import net.styx.model.tree.Container;
-import net.styx.model.tree.DefaultContainer;
-import net.styx.model.tree.Leaf;
+import net.styx.model.changelog.NodePath;
+import net.styx.model.changelog.StateTracker;
+import net.styx.model.sample.meta.AddressDef;
 
-public class Address implements ContainerMixin {
+public class Address {
+    private final AddressDef def;
+    private final NodePath<AddressDef> path;
+    private final StateTracker tracker;
 
-    public static final SampleDescriptor DESCRIPTOR = SampleDescriptor.ADDRESS;
-    
-    private final Container container;
-
-    public Address() {
-        this(new DefaultContainer(DESCRIPTOR));
+    public Address(NodePath<AddressDef> path, StateTracker stateTracker) {
+        this.path = path;
+        this.def = path.getLeaf().def();
+        this.tracker = stateTracker;
     }
 
-    public Address(long id) {
-        this(new DefaultContainer(DESCRIPTOR, id));
+    String getStreet() {
+        return tracker.get(path, def.street());
     }
 
-    public Address(Container container) {
-        this.container = container;
-    }
-
-    public String getStreet() {
-        return getLeafValue(SampleDescriptor.STREET, Leaf::getValueString);
-    }
-
-    public void setStreet(String street) {
-        setLeaf(SampleDescriptor.STREET, leaf -> leaf.setValueString(street));
-    }
-
-    public String getCity() {
-        return getLeafValue(SampleDescriptor.CITY, Leaf::getValueString);
-    }
-
-    public void setCity(String city) {
-        setLeaf(SampleDescriptor.CITY, leaf -> leaf.setValueString(city));
-    }
-
-    public int getZip() {
-        return getLeafValue(SampleDescriptor.ZIP, Leaf::getValueInt);
-    }
-
-    public void setZip(int zip) {
-        setLeaf(SampleDescriptor.ZIP, leaf -> leaf.setValueInt(zip));
-    }
-    
-    //-------------------------------------------------------------------------------------------------
-    // bridge 
-    //-------------------------------------------------------------------------------------------------
-
-    @Override
-    public Container delegate() {
-        return container;
+    void setStreet(String street) {
+        tracker.set(path, def.street(), street);
     }
 }

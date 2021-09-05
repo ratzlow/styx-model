@@ -1,0 +1,48 @@
+package net.styx.model_v1.tree;
+
+import net.styx.model_v1.meta.Descriptor;
+import net.styx.model_v1.meta.NodeID;
+
+import java.util.Objects;
+import java.util.StringJoiner;
+
+public class IdxNodeID implements NodeID {
+    private final Descriptor descriptor;
+    private final long idx;
+
+    public IdxNodeID(Descriptor descriptor, long idx) {
+        Objects.requireNonNull(descriptor);
+        this.descriptor = descriptor;
+        this.idx = idx;
+    }
+
+    public Descriptor getDescriptor() {
+        return descriptor;
+    }
+
+    public long getIdx() {
+        return idx;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        IdxNodeID nodeID = (IdxNodeID) o;
+        return idx == nodeID.idx &&
+                descriptor == nodeID.descriptor;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(descriptor, idx);
+    }
+
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", IdxNodeID.class.getSimpleName() + "[", "]")
+                .add("descriptor=" + descriptor)
+                .add("idx=" + idx)
+                .toString();
+    }
+}

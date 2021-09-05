@@ -1,0 +1,52 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+class Person {
+name: String
+birthday: DateTime
+sex: Sex
+accounts: List<String>
+}
+
+class Address {
+street: String
+zip: int
+city: City
+}
+
+enum Sex {
+MALE
+FEMALE
+OTHERWISE
+}
+
+class Book {
+isin: String
+title: String
+price: Money
+}
+
+class Job {
+description: String
+from: Date
+to: Date
+income: Money
+}
+
+class Money {
+amount: BigDecimal
+currency: Currency
+}
+
+class Project {
+position: String
+teamSize: int
+}
+
+Person *--> "0..n" Job : jobHistory
+Job *--> "0..n" Project : assignments
+Person *--> "0..n" Book : books
+Person *--> "0..1" Address : work
+Person *--> "0..1" Address : home
+
+@enduml

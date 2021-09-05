@@ -1,44 +1,57 @@
 package net.styx.model.meta;
 
-import net.styx.model.tree.Container;
+import java.util.Objects;
 
-import java.util.Collections;
-import java.util.Set;
-import java.util.function.Function;
-
-public interface NodeID {
-
-    NodeID UNDEF = UndefDescriptor::new;
-
-    long NO_IDX = 0;
-
-    Descriptor getDescriptor();
-
-    default long getIdx() {
-        return NO_IDX;
-    }
-
-    //--------------------------------------------------------------------------------------
-    // inner classes
-    //--------------------------------------------------------------------------------------
+public class NodeID<T extends NodeDef<?>> {
+    /**
+     * Stable ID per Node type.
+     */
+    final int id;
 
     /**
-     * Singleton as place holder if no valid business attribute reflecting
-     * Descriptor is known. Will not relate to the domain.
+     * Index can be:
+     * - static for a fixed single component assigned at dictionary instantiation
+     * - dynamic for a sub node (Components, Attributes) on creation time
      */
-    final class UndefDescriptor implements Descriptor {
-        @Override public int getTagNumber() { return 0; }
+    final int idx;
 
-        @Override public String shortName() { return "UNDEF"; }
+    private final String name;
+    private final T nodeDef;
 
-        @Override public String alias() { return "UNDEF"; }
+    public NodeID(T nodeDef) {
+        this(0, nodeDef.getDefaultName(), nodeDef);
+    }
 
-        @Override public NodeType getNodeType() { return NodeType.LEAF; }
+    public NodeID(int idx, String name, T nodeDef) {
+        this.id = nodeDef.getID();;
+        this.idx = idx;
+        this.name = name;
+        this.nodeDef = nodeDef;
+    }
 
-        @Override public DataType getDataType() { return DataType.INT; }
+    public T def() {
+        return nodeDef;
+    }
 
-        @Override public Set<Descriptor> getChildren() { return Collections.emptySet(); }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        NodeID<?> nodeID = (NodeID<?>) o;
+        return id == nodeID.id && idx == nodeID.idx;
+    }
 
-        @Override public Function<Container, Container> getDomainModelFactory() { return Function.identity(); }
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, idx);
+    }
+
+    @Override
+    public String toString() {
+        return "NodeID{" +
+                "id=" + id +
+                ", idx=" + idx +
+                ", name='" + name + '\'' +
+                '}';
     }
 }
