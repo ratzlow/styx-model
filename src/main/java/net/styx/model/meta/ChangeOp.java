@@ -1,4 +1,4 @@
-package net.styx.model.changelog;
+package net.styx.model.meta;
 
 public class ChangeOp<T> {
     public enum Type {SET, REMOVE}
@@ -13,5 +13,14 @@ public class ChangeOp<T> {
         this.path = path;
         this.before = before;
         this.after = after;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s%s: %s -> %s", type, path, format(before), format(after));
+    }
+
+    private static String format(Object o) {
+        return o != null ? '\'' + o.toString() + '\'' : "null";
     }
 }

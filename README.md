@@ -13,6 +13,10 @@ Of course the design is very opinionated as features come always on a price!
 - Clone this repo
 - Current status: very raw yet but concepts start to emerge
 
+## Cool features
+- Define arbitrary types and use them as node values - as long as they are immutable.
+- Collections of Node elements can form sub-tree as separate nodes. 
+
 ## Who might be interested?
 In the first place it is a personal experimental ground. You can borrow ideas and concepts but 
 nothing is "ready-as-a-lib" - here.
@@ -24,7 +28,7 @@ In case you have a rather sophisticated graph-based data model and need to:
 - compress your graph to the min attribute set
 - support transactional semantic on your graph with commit/rollback
 - version changed nodes
-- describe it by a meta model
+- describe it by a meta-model
 - want a generic structure complementing your domain model
 
 ## Typical use cases

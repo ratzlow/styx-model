@@ -3,12 +3,10 @@ package net.styx.model.meta;
 public class AttrDef<E> implements NodeDef<E> {
     private final int id;
     private final String name;
-    private final Class<E> clazz;
 
-    public AttrDef(int id, String name, Class<E> clazz) {
+    public AttrDef(int id, String name) {
         this.id = id;
         this.name = name;
-        this.clazz = clazz;
     }
 
     @Override

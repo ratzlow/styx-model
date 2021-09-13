@@ -1,9 +1,6 @@
 package net.styx.model.meta;
 
-import net.styx.model.changelog.NodePath;
-import net.styx.model.changelog.StateTracker;
-
-public abstract class ComponentDef<E> implements NodeDef<E> {
+public class ComponentDef<E> implements NodeDef<E> {
     private final int id;
     private final String name;
 
