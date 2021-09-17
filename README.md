@@ -4,9 +4,9 @@ often lack generic APIs. This is pretty natural, since the closer the model is t
 the harder it is to keep it generic.
 The project serves as a playground to work out a design that supports a number of features along a
 simple sample model. By model, we mean **object graph**.
-Ultimately the building blocks might be combined with code generators.
+Ultimately the building blocks will be combined with code generators.
 
-Of course the design is very opinionated as features come always on a price!
+Of course the design is very opinionated as features always come on a price!
 
 ## Getting started
 - You need JDK >= v11
@@ -19,17 +19,17 @@ Of course the design is very opinionated as features come always on a price!
 
 ## Who might be interested?
 In the first place it is a personal experimental ground. You can borrow ideas and concepts but 
-nothing is "ready-as-a-lib" - here.
+nothing is "ready-as-a-lib".
 
-In case you have a rather sophisticated graph-based data model and need to:
+In case you have a rather sophisticated (acyclic) graph-like data model and need to:
 - track changes
-- diff recursively between versions
+- support diffing between versions
 - want to serialize your (sub)graph without resorting to reflection
 - compress your graph to the min attribute set
 - support transactional semantic on your graph with commit/rollback
-- version changed nodes
 - describe it by a meta-model
 - want a generic structure complementing your domain model
+- Simple! It's just a tree! No annotations, reflection, byte code manipulation.
 
 ## Typical use cases
 - model manipulated in state engines
@@ -41,19 +41,19 @@ In case you have a rather sophisticated graph-based data model and need to:
 - every graph has 1 controlling root
 - associations between multiple roots have to be resolved externally (e.g. via repository lookup)
 - every aggregate is self-contained: no sharing of nodes across aggregates - except immutable leaf values
+- is an acyclic tree
 
 ## Sample domain model
-The focus is to cover standard requirements around data structures used to reflect a model. 
+The goal is to show-case standard requirements and operations. 
 Such as:
-- values ... primitives and specific types
-- containers ... fixed combination of values and other containers
+- values ... primitives and specific types. Leaves in a graph, not components and not groups.
+- components (container) ... static combination of values and other containers. Similar to a class.
+- group (container) ... dyn combination of other containers 
 - associations ... form a graph of containers
-- types ... reflecting the domain
-- idiomatic ... the model should feel natural and not impaired by some underlying framework
+- idiomatic ... the model should feel natural and not impaired by an underlying framework
 
 ### Everyone knows "Person-has" stuff
-The sample domain makes use of basic attributes (String, BigDecimal, long, enums) along with 
-different kind of relationships.
+The sample domain makes use of basic attributes (String, BigDecimal, long, enums) and other immutable complex value types (Money, Collection).
  
 ![Sample model entities](./doc/pics/1_small.png)
 
@@ -85,38 +85,36 @@ declared in a generic way to allow code generation.
     enables generic access and manipulation of the target model. The meta model will be generated as 
     well.
 
-- [ ] Values are reflected by **leafs** in the graph. 'Person.name' is obviously different from 
+- [ ] Values are reflected by **leaves** in the graph. 'Person.name' is obviously different from 
     'Person.Dog.name' (Person.name vs. Dog.name). Their identity is determined by their path in the 
     graph. 
 
-- [x] Leafs can refer to primitive types (int, boolean, ...) as well as to objects (Date, 
-    BigDecimal, ...). The former ones will _not_ be auto-boxed. All access to the proprietary domain 
-    model is strongly typed.
+- [x] All access to the proprietary domain model is strongly typed.
 
-- [x] Values are atomic whereas **nodes** are a collection of values or nodes.
+- [x] Values are atomic whereas **Containers** are a collection of values or nodes.
 
 - [ ] Domain objects offer different types of access:
     - random semantic access ... e.g. Person.setName("Joe")
     - generic access ... Person.getLeaf(MetaPerson.NAME).setValue("Joe")
     - sequential generic access ... iterate (recursively) over all properties of Person
 
-- [ ] Every node/leaf in the graph can be addressed by forming a path of the meta model and its' 
+- [ ] Every node/leaf in the graph can be addressed by forming a path of the meta-model and it's 
     location in the graph.
 
-- [ ] Minimize memory footprint. Leafs/nodes that are 'empty' are discarded - including 
+- [ ] Minimize memory footprint. Empty containers can be discarded - including 
     their references. If 'Person' has just the attribute 'name' set, no memory will be allocated for 
-    any other domain attribute. 
+    any other domain attribute. Be aware there is a certain overhead in this approach, so small containers might not pay off
 
 - [ ] Provide NullPointer safety by lazy initialization. Traversing 'Person.Dog.name' will create an 
     empty 'Dog' node, if it does not exist yet. This applies to all kind of nodes. If node is left 
     empty it will be automatically removed. (Might be configurable behaviour to avoid garbage) 
  
-- All nodes/leafs support recursive operations as outlined below. Access is provided as described in 
+- All nodes/leaves support recursive operations as outlined below. Access is provided as described in 
     "types of access"
     - [x] empty ... does not carry domain data
     - [x] changed ... data was un/set (a.k.a "dirty flag")
     - [x] commit/rollback ... to apply/revert recent model changes in memory
-    - [ ] diff ... extract changed structures in any combination of AND/OR/NOT(before,after)
+    - [ ] diff ... extract changed structures
     - [x] freeze ... prevent a node/leaf to be mutated
     - [ ] copy constructors ... to create im/mutable clones
     
@@ -142,16 +140,19 @@ declared in a generic way to allow code generation.
 
 ## Optimization options
 - propagate dirty flags up to root to mark dirty paths. Consider mark dirty and clean
-- all 1 -> 0 .. 1 classes could share attributeMap from parent, requires full path as key 
-    to avoid ambiguity person.name vs. dog.name
-- recycle objects
-- avoid auto boxing
+- cache predictable objects (deterministic paths (everything that does not involve 'groups'))
 - init maps on demand: e.g. DataContainer, Group
-- lazy init based on test evidence, in the meanwhile remove lazy init for predictability
-- init maps with max attribute number size to avoid resizing
 
 ## Gaps in model design
-- missing: support component A has named references B.1 and B.2 
-  (e.g. Person has private Address and work Address)
 - make it usable as library vs. framework
-- efficient extension model for object vs. native values
+
+# Test cases
+## Group
+- [ ] create C1 and add to G1 twice. Expect 2 elements added in G1. Expect both elements are equal (probably not)
+- [ ] create C1, C2. Add them to G1. Remove C1 and C2 from G1. Expect C1, C2 to be reverted to initial state. 
+- [ ] deep tree operations. Group of groups: G1 ->* G2 -> C1. G1 -> C1 -> C2 & A1. Check Consistency compared to POJO.
+- [ ] a container can only be added once to the graph. Adding the same node to another level, will change its path (and contained attributes path). Adding a container (that is already part of the group) to a group twice should be prevented.
+
+## Performance
+- [ ] CRUD down to certain depth
+- check if inplace update of map is possible avoid recreation of Map.Entry

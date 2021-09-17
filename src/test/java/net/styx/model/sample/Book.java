@@ -1,11 +1,11 @@
 package net.styx.model.sample;
 
+import net.styx.model.meta.Node;
 import net.styx.model.meta.NodePath;
 import net.styx.model.meta.StateTracker;
-import net.styx.model.meta.Node;
 import net.styx.model.sample.meta.BookDef;
 
-public class Book implements Node<Book ,BookDef> {
+public class Book implements Node<Book, BookDef> {
     private static final BookDef DEF = BookDef.INSTANCE;
     private NodePath<BookDef> path;
     private StateTracker tracker;

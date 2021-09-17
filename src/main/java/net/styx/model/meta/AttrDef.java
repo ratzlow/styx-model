@@ -1,5 +1,6 @@
 package net.styx.model.meta;
 
+// TODO: redundant
 public class AttrDef<E> implements NodeDef<E> {
     private final int id;
     private final String name;

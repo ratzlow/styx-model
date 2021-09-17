@@ -9,6 +9,17 @@ import static java.util.Objects.requireNonNull;
 // todo: add root ID of graph to tracker to manifest "owner"
 // todo: avoid creation of path during call chain
 public class StateTracker {
+    /**
+     * Anonymous NodeID to form the lower bound in a tree.
+     */
+    private static final NodeDef<?> ANY_LOWER_BOUND = new Any(0, "*");
+
+    /**
+     * Anonymous NodeID to form the upper bound in a tree.
+     */
+    private static final NodeDef<?> ANY_UPPER_BOUND = new Any(Integer.MAX_VALUE, "*");
+
+
     private final List<ChangeOp<?>> changeLog = new ArrayList<>();
     private final NavigableMap<NodePath<?>, Object> live = new TreeMap<>();
 
@@ -52,8 +63,8 @@ public class StateTracker {
         StateTracker extract = new StateTracker();
 
         // find all elements of subtree (children)
-        NodePath<?> lower = new NodePath<>(current, new NodeID<>(NodeDef.ANY_LOWER_BOUND));
-        NodePath<?> upper = new NodePath<>(current, new NodeID<>(NodeDef.ANY_UPPER_BOUND));
+        NodePath<?> lower = new NodePath<>(current, new NodeID<>(ANY_LOWER_BOUND));
+        NodePath<?> upper = new NodePath<>(current, new NodeID<>(ANY_UPPER_BOUND));
         Map<NodePath<?>, Object> deleteCandidates = new TreeMap<>(live.subMap(lower, upper));
         for (var entry : deleteCandidates.entrySet()) {
             NodePath<?> existingValue = entry.getKey();
@@ -133,5 +144,33 @@ public class StateTracker {
 
     private <E, T extends NodeDef<E>> NodePath<T> fqPath(NodePath<?> path, NodeID<T> nodeID) {
         return new NodePath<>(requireNonNull(path, "path"), requireNonNull(nodeID, "nodeID"));
+    }
+
+
+    //------------------------------------------------------------------------------------------------------------------
+    // inner classes
+    //------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * Unnamed generic def
+     */
+    private static final class Any implements NodeDef<Object> {
+        private final int id;
+        private final String name;
+
+        public Any(int id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+
+        @Override
+        public int getID() {
+            return id;
+        }
+
+        @Override
+        public String getDefaultName() {
+            return name;
+        }
     }
 }
