@@ -4,10 +4,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 // todo: is this collection actually a set?!
-public class Group<E extends Node<E, T>, T extends NodeDef<E>>
-        implements Node<Collection<E>, GroupDef<E, Collection<E>, T>>, Collection<E> {
+public class Group<E extends Node<E, T>, T extends NodeType<E>>
+        implements Node<Collection<E>, GroupType<E, Collection<E>, T>>, Collection<E> {
 
-    private NodePath<GroupDef<E, Collection<E>, T>> path;
+    private NodePath<GroupType<E, Collection<E>, T>> path;
     private StateTracker tracker;
 
     /**
@@ -20,11 +20,11 @@ public class Group<E extends Node<E, T>, T extends NodeDef<E>>
     /** running index of contained elements */
     private int elementIdx = 0;
 
-    public Group(NodePath<GroupDef<E, Collection<E>, T>> path, StateTracker stateTracker) {
+    public Group(NodePath<GroupType<E, Collection<E>, T>> path, StateTracker stateTracker) {
         this.path = path;
         this.tracker = stateTracker;
 
-        T elemDef = path.getLeaf().def().getElementDef();
+        T elemDef = path.getLeaf().def().getElementType();
         NodePath<T> fromKey = new NodePath<>(path, new NodeID<>(0, elemDef.getDefaultName(), elemDef));
         NodePath<T> toKey = new NodePath<>(path, new NodeID<>(Integer.MAX_VALUE, elemDef.getDefaultName(), elemDef));
 
@@ -36,7 +36,7 @@ public class Group<E extends Node<E, T>, T extends NodeDef<E>>
     //------------------------------------------------------------------------------------------------------------------
 
     @Override
-    public void connect(NodePath<GroupDef<E, Collection<E>, T>> prefix, StateTracker stateTracker) {
+    public void connect(NodePath<GroupType<E, Collection<E>, T>> prefix, StateTracker stateTracker) {
         stateTracker.set(prefix, this);
         this.tracker = stateTracker.load(prefix, this.path, tracker);
         this.path = prefix;
@@ -44,13 +44,13 @@ public class Group<E extends Node<E, T>, T extends NodeDef<E>>
 
     @Override
     public void disconnect() {
-        NodePath<GroupDef<E, Collection<E>, T>> DEFAULT_PATH = new NodePath<>(new NodeID<>(path.getLeaf().def()));
+        NodePath<GroupType<E, Collection<E>, T>> DEFAULT_PATH = new NodePath<>(new NodeID<>(path.getLeaf().def()));
         this.tracker = this.tracker.unload(DEFAULT_PATH, this.path);
         this.path = DEFAULT_PATH;
     }
 
     @Override
-    public NodePath<GroupDef<E, Collection<E>, T>> getNodePath() {
+    public NodePath<GroupType<E, Collection<E>, T>> getNodePath() {
         return path;
     }
 
@@ -91,7 +91,7 @@ public class Group<E extends Node<E, T>, T extends NodeDef<E>>
 
     @Override
     public boolean add(E e) {
-        NodePath<T> indexedPath = new NodePath<>(path, new NodeID<>(elementIdx++, path.getLeaf().def().getElementDef()));
+        NodePath<T> indexedPath = new NodePath<>(path, new NodeID<>(elementIdx++, path.getLeaf().def().getElementType()));
         int before = tracker.changeCount();
         e.connect(indexedPath, tracker);
         return before != tracker.changeCount();

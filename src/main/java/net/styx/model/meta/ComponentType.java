@@ -1,10 +1,10 @@
 package net.styx.model.meta;
 
-public class ComponentDef<E> implements NodeDef<E> {
+public class ComponentType<E> implements NodeType<E> {
     private final int id;
     private final String name;
 
-    public ComponentDef(int id, String name) {
+    public ComponentType(int id, String name) {
         this.id = id;
         this.name = name;
     }

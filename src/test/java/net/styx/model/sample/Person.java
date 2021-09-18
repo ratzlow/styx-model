@@ -3,19 +3,19 @@ package net.styx.model.sample;
 import net.styx.model.meta.Group;
 import net.styx.model.meta.NodePath;
 import net.styx.model.meta.StateTracker;
-import net.styx.model.sample.meta.AddressDef;
-import net.styx.model.sample.meta.PersonDef;
+import net.styx.model.sample.meta.AddressType;
+import net.styx.model.sample.meta.PersonType;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
 public class Person {
-    private static final PersonDef DEF = PersonDef.INSTANCE;
-    private final NodePath<PersonDef> path;
+    private static final PersonType DEF = PersonType.INSTANCE;
+    private final NodePath<PersonType> path;
     private final StateTracker tracker;
 
-    public Person(NodePath<PersonDef> path, StateTracker stateTracker) {
+    public Person(NodePath<PersonType> path, StateTracker stateTracker) {
         this.path = path;
         this.tracker = stateTracker;
     }
@@ -49,7 +49,7 @@ public class Person {
     }
 
     public Address home() {
-        return tracker.get(path, DEF.home(), fqPath -> AddressDef.INSTANCE.create(fqPath, tracker));
+        return tracker.get(path, DEF.home(), fqPath -> AddressType.INSTANCE.create(fqPath, tracker));
     }
 
     public void setHome(Address home) {
@@ -61,7 +61,7 @@ public class Person {
     }
 
     public Address work() {
-        return tracker.get(path, DEF.work(), fqPath -> AddressDef.INSTANCE.create(fqPath, tracker));
+        return tracker.get(path, DEF.work(), fqPath -> AddressType.INSTANCE.create(fqPath, tracker));
     }
 
     public void setWork(Address work) {

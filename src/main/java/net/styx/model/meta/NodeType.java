@@ -3,7 +3,7 @@ package net.styx.model.meta;
 /**
  * @param <E> business entity type
  */
-public interface NodeDef<E> {
+public interface NodeType<E> {
 
     int getID();
 

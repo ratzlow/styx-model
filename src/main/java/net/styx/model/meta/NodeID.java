@@ -2,7 +2,7 @@ package net.styx.model.meta;
 
 import java.util.Objects;
 
-public class NodeID<T extends NodeDef<?>> implements Comparable<NodeID<?>> {
+public class NodeID<T extends NodeType<?>> implements Comparable<NodeID<?>> {
     /**
      * Stable semantic ID per Node type.
      */
@@ -16,25 +16,25 @@ public class NodeID<T extends NodeDef<?>> implements Comparable<NodeID<?>> {
     private final int idx;
 
     private final String name;
-    private final T nodeDef;
+    private final T nodeType;
 
-    public NodeID(T nodeDef) {
-        this(0, nodeDef.getDefaultName(), nodeDef);
+    public NodeID(T nodeType) {
+        this(0, nodeType.getDefaultName(), nodeType);
     }
 
-    public NodeID(int idx, T nodeDef) {
-        this(idx, nodeDef.getDefaultName(), nodeDef);
+    public NodeID(int idx, T nodeType) {
+        this(idx, nodeType.getDefaultName(), nodeType);
     }
 
-    public NodeID(int idx, String name, T nodeDef) {
-        this.id = nodeDef.getID();
+    public NodeID(int idx, String name, T nodeType) {
+        this.id = nodeType.getID();
         this.idx = idx;
         this.name = name;
-        this.nodeDef = nodeDef;
+        this.nodeType = nodeType;
     }
 
     public T def() {
-        return nodeDef;
+        return nodeType;
     }
 
 

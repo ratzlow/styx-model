@@ -1,7 +1,7 @@
 package net.styx.model.sample.meta;
 
-import net.styx.model.meta.ComponentDef;
-import net.styx.model.meta.NodeDef;
+import net.styx.model.meta.ComponentType;
+import net.styx.model.meta.NodeType;
 import net.styx.model.sample.Sex;
 
 import java.time.LocalDateTime;
@@ -12,19 +12,19 @@ public class Dictionary {
 
     // ------------------------------------------ declarations ---------------------------------------------------------
 
-    public static NodeDef<String> NAME = new ComponentDef<>(100, "name");
-    static NodeDef<LocalDateTime> BIRTHDAY = new ComponentDef<>(101, "birthDay");
-    static NodeDef<Sex> SEX = new ComponentDef<>(102, "sex");
+    public static NodeType<String> NAME = new ComponentType<>(100, "name");
+    static NodeType<LocalDateTime> BIRTHDAY = new ComponentType<>(101, "birthDay");
+    static NodeType<Sex> SEX = new ComponentType<>(102, "sex");
 
-    static NodeDef<List<String>> ACCOUNTS = new ComponentDef<>(103, "accounts") {
+    static NodeType<List<String>> ACCOUNTS = new ComponentType<>(103, "accounts") {
         @Override
         public List<String> normalize(List<String> value) {
             return value != null ? Collections.unmodifiableList(value) : null;
         }
     };
 
-    static NodeDef<String> STREET = new ComponentDef<>(110, "street");
-    static NodeDef<String> DESCRIPTION = new ComponentDef<>(111, "description");
+    static NodeType<String> STREET = new ComponentType<>(110, "street");
+    static NodeType<String> DESCRIPTION = new ComponentType<>(111, "description");
 
-    static NodeDef<Integer> ZIP = new ComponentDef<>(112, "zip");
+    static NodeType<Integer> ZIP = new ComponentType<>(112, "zip");
 }

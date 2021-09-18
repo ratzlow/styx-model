@@ -12,12 +12,12 @@ public class StateTracker {
     /**
      * Anonymous NodeID to form the lower bound in a tree.
      */
-    private static final NodeDef<?> ANY_LOWER_BOUND = new Any(0, "*");
+    private static final NodeType<?> ANY_LOWER_BOUND = new Any(0, "*");
 
     /**
      * Anonymous NodeID to form the upper bound in a tree.
      */
-    private static final NodeDef<?> ANY_UPPER_BOUND = new Any(Integer.MAX_VALUE, "*");
+    private static final NodeType<?> ANY_UPPER_BOUND = new Any(Integer.MAX_VALUE, "*");
 
 
     private final List<ChangeOp<?>> changeLog = new ArrayList<>();
@@ -89,7 +89,7 @@ public class StateTracker {
     /**
      * Retrieve or create+store on demand.
      */
-    public <E, T extends NodeDef<E>> E get(NodePath<?> path, NodeID<T> nodeID, Function<NodePath<T>, E> factory) {
+    public <E, T extends NodeType<E>> E get(NodePath<?> path, NodeID<T> nodeID, Function<NodePath<T>, E> factory) {
         NodePath<T> fqPath = fqPath(path, nodeID);
         E current = getInternal(fqPath);
 
@@ -101,7 +101,7 @@ public class StateTracker {
         return current;
     }
 
-    public <E, T extends NodeDef<E>> E get(NodePath<?> path, NodeID<T> nodeID) {
+    public <E, T extends NodeType<E>> E get(NodePath<?> path, NodeID<T> nodeID) {
         NodePath<T> fqPath = fqPath(path, nodeID);
         return getInternal(fqPath);
     }
@@ -111,7 +111,7 @@ public class StateTracker {
         return (E) live.get(fqPath);
     }
 
-    public <E, T extends NodeDef<E>> void set(NodePath<?> path, NodeID<T> nodeID, E value) {
+    public <E, T extends NodeType<E>> void set(NodePath<?> path, NodeID<T> nodeID, E value) {
         set(fqPath(path, nodeID), value);
     }
 
@@ -127,7 +127,7 @@ public class StateTracker {
             }
         } else {
             @SuppressWarnings("unchecked")
-            NodeDef<E> def = (NodeDef<E>) fqPath.getLeaf().def();
+            NodeType<E> def = (NodeType<E>) fqPath.getLeaf().def();
             E after = def.normalize(value);
 
             @SuppressWarnings("unchecked")
@@ -142,7 +142,7 @@ public class StateTracker {
         }
     }
 
-    private <E, T extends NodeDef<E>> NodePath<T> fqPath(NodePath<?> path, NodeID<T> nodeID) {
+    private <E, T extends NodeType<E>> NodePath<T> fqPath(NodePath<?> path, NodeID<T> nodeID) {
         return new NodePath<>(requireNonNull(path, "path"), requireNonNull(nodeID, "nodeID"));
     }
 
@@ -154,7 +154,7 @@ public class StateTracker {
     /**
      * Unnamed generic def
      */
-    private static final class Any implements NodeDef<Object> {
+    private static final class Any implements NodeType<Object> {
         private final int id;
         private final String name;
 

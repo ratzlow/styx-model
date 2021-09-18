@@ -2,16 +2,16 @@ package net.styx.model.meta;
 
 import java.util.Collection;
 
-public class GroupDef<E, C extends Collection<E>, T extends NodeDef<E>> implements NodeDef<C> {
+public class GroupType<E, C extends Collection<E>, T extends NodeType<E>> implements NodeType<C> {
 
     private final int id;
     private final String name;
-    private final T elementDef;
+    private final T elementType;
 
-    public GroupDef(int id, String name, T elementDef) {
+    public GroupType(int id, String name, T elementType) {
         this.id = id;
         this.name = name;
-        this.elementDef = elementDef;
+        this.elementType = elementType;
     }
 
     @Override
@@ -24,7 +24,7 @@ public class GroupDef<E, C extends Collection<E>, T extends NodeDef<E>> implemen
         return name;
     }
 
-    public T getElementDef() {
-        return elementDef;
+    public T getElementType() {
+        return elementType;
     }
 }

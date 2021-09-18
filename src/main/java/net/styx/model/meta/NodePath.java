@@ -8,7 +8,7 @@ import java.util.Objects;
 /**
  * Path to a node starting at the root of the tree.
  */
-public class NodePath<T extends NodeDef<?>> implements Comparable<NodePath<T>> {
+public class NodePath<T extends NodeType<?>> implements Comparable<NodePath<T>> {
 
     private final List<NodeID<?>> nodeIDs;
 

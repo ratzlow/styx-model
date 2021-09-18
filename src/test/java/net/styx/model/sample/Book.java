@@ -3,25 +3,25 @@ package net.styx.model.sample;
 import net.styx.model.meta.Node;
 import net.styx.model.meta.NodePath;
 import net.styx.model.meta.StateTracker;
-import net.styx.model.sample.meta.BookDef;
+import net.styx.model.sample.meta.BookType;
 
-public class Book implements Node<Book, BookDef> {
-    private static final BookDef DEF = BookDef.INSTANCE;
-    private NodePath<BookDef> path;
+public class Book implements Node<Book, BookType> {
+    private static final BookType DEF = BookType.INSTANCE;
+    private NodePath<BookType> path;
     private StateTracker tracker;
 
-    public Book(StateTracker stateTracker, NodePath<BookDef> path) {
+    public Book(StateTracker stateTracker, NodePath<BookType> path) {
         this.path = path;
         this.tracker = stateTracker;
     }
 
     public Book(StateTracker stateTracker) {
         this.tracker = stateTracker;
-        this.path = BookDef.DEFAULT_PATH;
+        this.path = BookType.DEFAULT_PATH;
     }
 
     public Book() {
-        path = BookDef.DEFAULT_PATH;
+        path = BookType.DEFAULT_PATH;
         tracker = new StateTracker();
     }
 
@@ -34,7 +34,7 @@ public class Book implements Node<Book, BookDef> {
     }
 
     @Override
-    public NodePath<BookDef> getNodePath() {
+    public NodePath<BookType> getNodePath() {
         return path;
     }
 
@@ -43,7 +43,7 @@ public class Book implements Node<Book, BookDef> {
      * @param stateTracker of joined tree that is now also hosting this node state
      */
     @Override
-    public void connect(NodePath<BookDef> prefix, StateTracker stateTracker) {
+    public void connect(NodePath<BookType> prefix, StateTracker stateTracker) {
         stateTracker.set(prefix, this);
         this.tracker = stateTracker.load(prefix, this.path, tracker);
         this.path = prefix;
@@ -51,8 +51,8 @@ public class Book implements Node<Book, BookDef> {
 
     @Override
     public void disconnect() {
-        this.tracker = this.tracker.unload(BookDef.DEFAULT_PATH, this.path);
-        this.path = BookDef.DEFAULT_PATH;
+        this.tracker = this.tracker.unload(BookType.DEFAULT_PATH, this.path);
+        this.path = BookType.DEFAULT_PATH;
     }
 
     @Override

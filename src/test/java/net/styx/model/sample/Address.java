@@ -2,14 +2,14 @@ package net.styx.model.sample;
 
 import net.styx.model.meta.NodePath;
 import net.styx.model.meta.StateTracker;
-import net.styx.model.sample.meta.AddressDef;
+import net.styx.model.sample.meta.AddressType;
 
 public class Address {
-    private static final AddressDef DEF = AddressDef.INSTANCE;
-    private final NodePath<AddressDef> path;
+    private static final AddressType DEF = AddressType.INSTANCE;
+    private final NodePath<AddressType> path;
     private final StateTracker tracker;
 
-    public Address(NodePath<AddressDef> path, StateTracker stateTracker) {
+    public Address(NodePath<AddressType> path, StateTracker stateTracker) {
         this.path = path;
         this.tracker = stateTracker;
     }
