@@ -1,15 +1,11 @@
 package net.styx.model.sample.meta;
 
-import net.styx.model.meta.NodePath;
-import net.styx.model.meta.StateTracker;
-import net.styx.model.meta.AttrDef;
-import net.styx.model.meta.ComponentDef;
-import net.styx.model.meta.GroupDef;
-import net.styx.model.meta.NodeID;
+import net.styx.model.meta.*;
 import net.styx.model.sample.Book;
 import net.styx.model.sample.Person;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 public class PersonDef extends ComponentDef<Person> {
@@ -17,9 +13,9 @@ public class PersonDef extends ComponentDef<Person> {
     public static final NodePath<PersonDef> ROOT_ID = new NodePath<>(new NodeID<>(INSTANCE));
 
     // attributes
-    private final NodeID<AttrDef<String>> name = new NodeID<>(Dictionary.NAME);
-    private final NodeID<AttrDef<LocalDateTime>> birthday = new NodeID<>(Dictionary.BIRTHDAY);
-    private final NodeID<AttrDef<List<String>>> accounts = new NodeID<>(Dictionary.ACCOUNTS);
+    private final NodeID<NodeDef<String>> name = new NodeID<>(Dictionary.NAME);
+    private final NodeID<NodeDef<LocalDateTime>> birthday = new NodeID<>(Dictionary.BIRTHDAY);
+    private final NodeID<NodeDef<List<String>>> accounts = new NodeID<>(Dictionary.ACCOUNTS);
 
 
     // components
@@ -27,19 +23,19 @@ public class PersonDef extends ComponentDef<Person> {
     private final NodeID<AddressDef> home = new NodeID<>(2, "home", AddressDef.INSTANCE);
 
     // groups
-    private final NodeID<GroupDef<Book, BookDef>> books = new NodeID<>(new GroupDef<>(7, "books", BookDef.INSTANCE));
+    private final NodeID<GroupDef<Book, Collection<Book>, BookDef>> books = new NodeID<>(new GroupDef<>(7, "books", BookDef.INSTANCE));
 
     PersonDef() {
         super(1, "person");
     }
 
-    public NodeID<AttrDef<String>> name() {
+    public NodeID<NodeDef<String>> name() {
         return name;
     }
 
-    public NodeID<AttrDef<LocalDateTime>> birthday() {return birthday;}
+    public NodeID<NodeDef<LocalDateTime>> birthday() {return birthday;}
 
-    public NodeID<AttrDef<List<String>>> accounts() {return accounts; }
+    public NodeID<NodeDef<List<String>>> accounts() {return accounts; }
 
     public NodeID<AddressDef> work() {
         return work;
@@ -49,7 +45,7 @@ public class PersonDef extends ComponentDef<Person> {
         return home;
     }
 
-    public NodeID<GroupDef<Book, BookDef>> books() {
+    public NodeID<GroupDef<Book, Collection<Book>, BookDef>> books() {
         return books;
     }
 

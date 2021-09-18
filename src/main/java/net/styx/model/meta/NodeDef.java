@@ -5,10 +5,6 @@ package net.styx.model.meta;
  */
 public interface NodeDef<E> {
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Behaviour & properties available by this interface
-    //------------------------------------------------------------------------------------------------------------------
-
     int getID();
 
     String getDefaultName();

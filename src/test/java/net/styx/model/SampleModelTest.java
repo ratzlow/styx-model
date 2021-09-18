@@ -94,8 +94,8 @@ public class SampleModelTest {
 
         // now add it to a collection
         StateTracker booksTracker = new StateTracker();
-        GroupDef<Book, BookDef> booksDef = new GroupDef<>(7, "books", BookDef.INSTANCE);
-        NodePath<GroupDef<Book, BookDef>> booksPath = new NodePath<>(new NodeID<>(booksDef));
+        GroupDef<Book, Collection<Book>, BookDef> booksDef = new GroupDef<>(7, "books", BookDef.INSTANCE);
+        NodePath<GroupDef<Book, Collection<Book>, BookDef>> booksPath = new NodePath<>(new NodeID<>(booksDef));
         Group<Book, BookDef> books = new Group<>(booksPath, booksTracker);
         Assertions.assertEquals(0, booksTracker.getNodes().size());
         Assertions.assertEquals(0, books.size());

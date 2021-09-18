@@ -4,9 +4,11 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 // todo: is this collection actually a set?!
-public class Group<E extends Node<E, T>, T extends NodeDef<E>> implements Collection<E> {
-    private final NodePath<GroupDef<E, T>> path;
-    private final StateTracker tracker;
+public class Group<E extends Node<E, T>, T extends NodeDef<E>>
+        implements Node<Collection<E>, GroupDef<E, Collection<E>, T>>, Collection<E> {
+
+    private NodePath<GroupDef<E, Collection<E>, T>> path;
+    private StateTracker tracker;
 
     /**
      * Map filtered down to the direct child nodes of this collection.
@@ -18,7 +20,7 @@ public class Group<E extends Node<E, T>, T extends NodeDef<E>> implements Collec
     /** running index of contained elements */
     private int elementIdx = 0;
 
-    public Group(NodePath<GroupDef<E, T>> path, StateTracker stateTracker) {
+    public Group(NodePath<GroupDef<E, Collection<E>, T>> path, StateTracker stateTracker) {
         this.path = path;
         this.tracker = stateTracker;
 
@@ -28,6 +30,34 @@ public class Group<E extends Node<E, T>, T extends NodeDef<E>> implements Collec
 
         this.view = tracker.getNodes().subMap(fromKey, toKey);
     }
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Node interface
+    //------------------------------------------------------------------------------------------------------------------
+
+    @Override
+    public void connect(NodePath<GroupDef<E, Collection<E>, T>> prefix, StateTracker stateTracker) {
+        stateTracker.set(prefix, this);
+        this.tracker = stateTracker.load(prefix, this.path, tracker);
+        this.path = prefix;
+    }
+
+    @Override
+    public void disconnect() {
+        NodePath<GroupDef<E, Collection<E>, T>> DEFAULT_PATH = new NodePath<>(new NodeID<>(path.getLeaf().def()));
+        this.tracker = this.tracker.unload(DEFAULT_PATH, this.path);
+        this.path = DEFAULT_PATH;
+    }
+
+    @Override
+    public NodePath<GroupDef<E, Collection<E>, T>> getNodePath() {
+        return path;
+    }
+
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Collection interface
+    //------------------------------------------------------------------------------------------------------------------
 
     @Override
     public int size() {

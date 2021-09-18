@@ -2,7 +2,8 @@ package net.styx.model.meta;
 
 import java.util.Collection;
 
-public class GroupDef<E, T extends NodeDef<E>> implements NodeDef<Collection<E>> {
+public class GroupDef<E, C extends Collection<E>, T extends NodeDef<E>> implements NodeDef<C> {
+
     private final int id;
     private final String name;
     private final T elementDef;

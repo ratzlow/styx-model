@@ -155,4 +155,4 @@ declared in a generic way to allow code generation.
 
 ## Performance
 - [ ] CRUD down to certain depth
-- check if inplace update of map is possible avoid recreation of Map.Entry
+- [ ] check if inplace update of map is possible to avoid recreation of Map.Entry

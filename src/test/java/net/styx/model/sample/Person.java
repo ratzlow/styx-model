@@ -1,8 +1,8 @@
 package net.styx.model.sample;
 
+import net.styx.model.meta.Group;
 import net.styx.model.meta.NodePath;
 import net.styx.model.meta.StateTracker;
-import net.styx.model.meta.Group;
 import net.styx.model.sample.meta.AddressDef;
 import net.styx.model.sample.meta.PersonDef;
 
