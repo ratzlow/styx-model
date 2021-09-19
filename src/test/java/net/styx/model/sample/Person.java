@@ -1,87 +1,101 @@
 package net.styx.model.sample;
 
 import net.styx.model.meta.*;
-import net.styx.model.sample.meta.Dictionary;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
-public class Person {
-    private final NodePath<Type> path;
-    private final StateTracker tracker;
+public class Person implements Node<Person.Type> {
+    private final NodeMixin<Person.Type> mixin;
 
     public Person(NodePath<Type> path, StateTracker stateTracker) {
-        this.path = path;
-        this.tracker = stateTracker;
+        this.mixin = new NodeMixin<>(stateTracker, path);
     }
     
     public String getName() {
-        return tracker.get(path, Type.INSTANCE.name);
+        return mixin.tracker().get(mixin.getNodePath(),  Type.INSTANCE.name);
     }
 
     public void setName(String name) {
-        tracker.set(path, Type.INSTANCE.name, name);
+        mixin.tracker().set(mixin.getNodePath(), Type.INSTANCE.name, name);
     }
 
     public void setAccounts(List<String> accounts) {
-        tracker.set(path, Type.INSTANCE.accounts, accounts);
+        mixin.tracker().set(mixin.getNodePath(), Type.INSTANCE.accounts, accounts);
     }
 
     public List<String> getAccounts() {
-        return tracker.get(path, Type.INSTANCE.accounts);
+        return mixin.tracker().get(mixin.getNodePath(),  Type.INSTANCE.accounts);
     }
 
     public LocalDateTime getBirthday() {
-        return tracker.get(path, Type.INSTANCE.birthday);
+        return mixin.tracker().get(mixin.getNodePath(),  Type.INSTANCE.birthday);
     }
 
     public void setBirthday(LocalDateTime birthday) {
-        tracker.set(path, Type.INSTANCE.birthday, birthday);
+        mixin.tracker().set(mixin.getNodePath(), Type.INSTANCE.birthday, birthday);
     }
 
     public Address getHome() {
-        return tracker.get(path, Type.INSTANCE.home);
+        return mixin.tracker().get(mixin.getNodePath(),  Type.INSTANCE.home);
     }
 
     public Address home() {
-        return tracker.get(path, Type.INSTANCE.home, fqPath -> new Address(fqPath, tracker));
+        return mixin.tracker().get(mixin.getNodePath(),  Type.INSTANCE.home, fqPath -> new Address(fqPath, mixin.tracker()));
     }
 
     public void setHome(Address home) {
-        tracker.set(path, Type.INSTANCE.home, home);
+        mixin.tracker().set(mixin.getNodePath(), Type.INSTANCE.home, home);
     }
 
     public Address getWork() {
-        return tracker.get(path, Type.INSTANCE.work);
+        return mixin.tracker().get(mixin.getNodePath(),  Type.INSTANCE.work);
     }
 
     public Address work() {
-        return tracker.get(path, Type.INSTANCE.work, fqPath -> new Address(fqPath, tracker));
+        return mixin.tracker().get(mixin.getNodePath(),  Type.INSTANCE.work, fqPath -> new Address(fqPath, mixin.tracker()));
     }
 
     public void setWork(Address work) {
-        tracker.set(path, Type.INSTANCE.work, work);
+        mixin.tracker().set(mixin.getNodePath(), Type.INSTANCE.work, work);
     }
 
     public Collection<Book> getBooks() {
-        return tracker.get(path, Type.INSTANCE.books);
+        return mixin.tracker().get(mixin.getNodePath(),  Type.INSTANCE.books);
     }
 
     public Collection<Book> books() {
-        return tracker.get(path, Type.INSTANCE.books, fqPath -> new Group<>(fqPath, tracker));
+        return mixin.tracker().get(mixin.getNodePath(),  Type.INSTANCE.books, fqPath -> new Group<>(fqPath, mixin.tracker()));
     }
 
     public void setBooks(Collection<Book> books) {
-        tracker.set(path, Type.INSTANCE.books, books);
+        mixin.tracker().set(mixin.getNodePath(), Type.INSTANCE.books, books);
+    }
+
+    //------------------------------------------- NodeMixin API --------------------------------------------------------
+
+    @Override
+    public NodePath<Person.Type> getNodePath() {
+        return mixin.getNodePath();
+    }
+
+    @Override
+    public void connect(NodePath<Person.Type> prefix, StateTracker stateTracker) {
+        mixin.connect(prefix, stateTracker);
+    }
+
+    @Override
+    public void disconnect() {
+        mixin.disconnect();
     }
 
     @Override
     public String toString() {
-        return "Person{path='" + path + '}';
+        return mixin.toString();
     }
 
-    //------------------------------------------------------------------------------------------------------------------
+    //------------------------------------------- Meta -----------------------------------------------------------------
 
     public static class Type extends ComponentType<Person> {
         public static final Type INSTANCE = new Type();

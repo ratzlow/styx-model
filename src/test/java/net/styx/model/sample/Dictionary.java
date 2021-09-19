@@ -1,8 +1,7 @@
-package net.styx.model.sample.meta;
+package net.styx.model.sample;
 
 import net.styx.model.meta.ComponentType;
 import net.styx.model.meta.NodeType;
-import net.styx.model.sample.Sex;
 
 import java.time.LocalDateTime;
 import java.util.Collections;

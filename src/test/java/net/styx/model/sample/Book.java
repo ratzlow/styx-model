@@ -1,63 +1,53 @@
 package net.styx.model.sample;
 
 import net.styx.model.meta.*;
-import net.styx.model.sample.meta.Dictionary;
 
 public class Book implements Node<Book.Type> {
-    private NodePath<Type> path;
-    private StateTracker tracker;
+    private final NodeMixin<Book.Type> mixin;
 
     public Book(StateTracker stateTracker, NodePath<Type> path) {
-        this.path = path;
-        this.tracker = stateTracker;
+        this.mixin = new NodeMixin<>(stateTracker, path);
     }
 
     public Book(StateTracker stateTracker) {
-        this.tracker = stateTracker;
-        this.path = Type.DEFAULT_PATH;
+        this(stateTracker, Type.DEFAULT_PATH);
     }
 
     public Book() {
-        path = Type.DEFAULT_PATH;
-        tracker = new StateTracker();
+        this(new StateTracker(), Type.DEFAULT_PATH);
     }
 
     public String getDescription() {
-        return tracker.get(path, Type.INSTANCE.description);
+        return mixin.tracker().get(mixin.getNodePath(), Type.INSTANCE.description);
     }
 
     public void setDescription(String description) {
-        tracker.set(path, Type.INSTANCE.description, description);
+        mixin.tracker().set(mixin.getNodePath(), Type.INSTANCE.description, description);
     }
+
+    //------------------------------------------- NodeMixin API --------------------------------------------------------
 
     @Override
     public NodePath<Type> getNodePath() {
-        return path;
+        return mixin.getNodePath();
     }
 
-    /**
-     * @param prefix fqPath of current element in joined tree
-     * @param stateTracker of joined tree that is now also hosting this node state
-     */
     @Override
     public void connect(NodePath<Type> prefix, StateTracker stateTracker) {
-        stateTracker.set(prefix, this);
-        this.tracker = stateTracker.load(prefix, this.path, tracker);
-        this.path = prefix;
+        mixin.connect(prefix, stateTracker);
     }
 
     @Override
     public void disconnect() {
-        this.tracker = this.tracker.unload(Type.DEFAULT_PATH, this.path);
-        this.path = Type.DEFAULT_PATH;
+        mixin.disconnect();
     }
 
     @Override
     public String toString() {
-        return "Book{path='" + path + '}';
+        return mixin.toString();
     }
 
-    //------------------------------------------------------------------------------------------------------------------
+    //------------------------------------------- Meta -----------------------------------------------------------------
 
     public static class Type extends ComponentType<Book> {
         public static final Type INSTANCE = new Type();
