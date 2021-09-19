@@ -4,8 +4,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 // todo: is this collection actually a set?!
-public class Group<E extends Node<E, T>, T extends NodeType<E>>
-        implements Node<Collection<E>, GroupType<E, Collection<E>, T>>, Collection<E> {
+public class Group<E extends Node<T>, T extends NodeType<E>>
+        implements Node<GroupType<E, Collection<E>, T>>, Collection<E> {
 
     private NodePath<GroupType<E, Collection<E>, T>> path;
     private StateTracker tracker;
@@ -54,7 +54,6 @@ public class Group<E extends Node<E, T>, T extends NodeType<E>>
         return path;
     }
 
-
     //------------------------------------------------------------------------------------------------------------------
     // Collection interface
     //------------------------------------------------------------------------------------------------------------------
@@ -71,7 +70,7 @@ public class Group<E extends Node<E, T>, T extends NodeType<E>>
 
     @Override
     public boolean contains(Object o) {
-        return o instanceof Node && (view.containsKey(((Node<?, ?>) o).getNodePath()));
+        return o instanceof Node && (view.containsKey(((Node<?>) o).getNodePath()));
     }
 
     @Override
@@ -104,7 +103,7 @@ public class Group<E extends Node<E, T>, T extends NodeType<E>>
     public boolean remove(Object o) {
         boolean changed = false;
         if (o instanceof Node) {
-            Node<?, ?> elem = (Node<?, ?>) o;
+            Node<?> elem = (Node<?>) o;
             int before = tracker.changeCount();
             elem.disconnect();
             changed = before != tracker.changeCount();
@@ -142,8 +141,8 @@ public class Group<E extends Node<E, T>, T extends NodeType<E>>
     @Override
     public boolean retainAll(Collection<?> keep) {
         Set<? extends NodePath<?>> keepKeys = keep.stream()
-                .filter(elem -> elem instanceof Node<?, ?>)
-                .map(elem -> ((Node<?, ?>) elem).getNodePath())
+                .filter(elem -> elem instanceof Node<?>)
+                .map(elem -> ((Node<?>) elem).getNodePath())
                 .collect(Collectors.toSet());
         // determine entries to rm
         Set<? extends NodePath<?>> removeKeys = new HashSet<>(view.keySet());

@@ -4,9 +4,6 @@ import net.styx.model.meta.*;
 import net.styx.model.sample.Address;
 import net.styx.model.sample.Book;
 import net.styx.model.sample.Person;
-import net.styx.model.sample.meta.AddressType;
-import net.styx.model.sample.meta.BookType;
-import net.styx.model.sample.meta.PersonType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -24,7 +21,7 @@ public class SampleModelTest {
     @Test
     void wirePojoStyle() {
         final StateTracker tracker = new StateTracker();
-        PersonType personDef = PersonType.INSTANCE;
+        Person.Type personDef = Person.Type.INSTANCE;
         Person person = personDef.create(tracker);
 
         person.setName("Frank");
@@ -33,8 +30,8 @@ public class SampleModelTest {
         // trace changes on nested structures
         Assertions.assertNull(person.getHome());
 
-        NodePath<AddressType> homePath = new NodePath<>(PersonType.ROOT_ID, personDef.home());
-        Address home = AddressType.INSTANCE.create(homePath, tracker);
+        NodePath<Address.Type> homePath = new NodePath<>(Person.Type.ROOT_ID, personDef.home);
+        Address home = new Address(homePath, tracker);
         home.setStreet("Mainstreet");
         person.setHome(home);
         Assertions.assertEquals("Mainstreet", person.getHome().getStreet());
@@ -94,9 +91,9 @@ public class SampleModelTest {
 
         // now add it to a collection
         StateTracker booksTracker = new StateTracker();
-        GroupType<Book, Collection<Book>, BookType> booksDef = new GroupType<>(7, "books", BookType.INSTANCE);
-        NodePath<GroupType<Book, Collection<Book>, BookType>> booksPath = new NodePath<>(new NodeID<>(booksDef));
-        Group<Book, BookType> books = new Group<>(booksPath, booksTracker);
+        GroupType<Book, Collection<Book>, Book.Type> booksDef = new GroupType<>(7, "books", Book.Type.INSTANCE);
+        NodePath<GroupType<Book, Collection<Book>, Book.Type>> booksPath = new NodePath<>(new NodeID<>(booksDef));
+        Group<Book, Book.Type> books = new Group<>(booksPath, booksTracker);
         Assertions.assertEquals(0, booksTracker.getNodes().size());
         Assertions.assertEquals(0, books.size());
 
@@ -123,7 +120,7 @@ public class SampleModelTest {
     @Test
     void attributeAsList() {
         StateTracker tracker = new StateTracker();
-        Person p = new Person(PersonType.ROOT_ID, tracker);
+        Person p = new Person(Person.Type.ROOT_ID, tracker);
         Assertions.assertNull(p.getAccounts());
         List<String> accounts = new ArrayList<>(List.of("123", "456"));
         p.setAccounts(accounts);
@@ -153,7 +150,7 @@ public class SampleModelTest {
 
     private Person createPerson() {
         StateTracker tracker = new StateTracker();
-        PersonType personDef = PersonType.INSTANCE;
+        Person.Type personDef = Person.Type.INSTANCE;
         return personDef.create(tracker);
     }
 }

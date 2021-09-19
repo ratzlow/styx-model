@@ -1,7 +1,6 @@
 package net.styx.model.sample;
 
-import net.styx.model.meta.ComponentType;
-import net.styx.model.meta.GroupType;
+import net.styx.model.meta.*;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
@@ -18,7 +17,33 @@ public class GroupTest {
 
     @Test
     void testFirstLevelOperation() {
-        class CompA {}
+
+
+
         ComponentType<CompA> componentDefA = new ComponentType<>(20, "A_Component");
+    }
+
+    static class CompA implements Node<CompA.CompAType> {
+
+        @Override
+        public void connect(NodePath<CompAType> prefix, StateTracker stateTracker) {
+
+        }
+
+        @Override
+        public void disconnect() {
+
+        }
+
+        @Override
+        public NodePath<CompAType> getNodePath() {
+            return null;
+        }
+
+        static class CompAType extends ComponentType<CompA> {
+            public CompAType(int id, String name) {
+                super(id, name);
+            }
+        }
     }
 }

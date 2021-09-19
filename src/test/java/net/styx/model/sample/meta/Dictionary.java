@@ -13,18 +13,18 @@ public class Dictionary {
     // ------------------------------------------ declarations ---------------------------------------------------------
 
     public static NodeType<String> NAME = new ComponentType<>(100, "name");
-    static NodeType<LocalDateTime> BIRTHDAY = new ComponentType<>(101, "birthDay");
-    static NodeType<Sex> SEX = new ComponentType<>(102, "sex");
+    public static NodeType<LocalDateTime> BIRTHDAY = new ComponentType<>(101, "birthDay");
+    public static NodeType<Sex> SEX = new ComponentType<>(102, "sex");
 
-    static NodeType<List<String>> ACCOUNTS = new ComponentType<>(103, "accounts") {
+    public static NodeType<List<String>> ACCOUNTS = new ComponentType<>(103, "accounts") {
         @Override
         public List<String> normalize(List<String> value) {
             return value != null ? Collections.unmodifiableList(value) : null;
         }
     };
 
-    static NodeType<String> STREET = new ComponentType<>(110, "street");
-    static NodeType<String> DESCRIPTION = new ComponentType<>(111, "description");
+    public static NodeType<String> STREET = new ComponentType<>(110, "street");
+    public static NodeType<String> DESCRIPTION = new ComponentType<>(111, "description");
 
-    static NodeType<Integer> ZIP = new ComponentType<>(112, "zip");
+    public static NodeType<Integer> ZIP = new ComponentType<>(112, "zip");
 }
