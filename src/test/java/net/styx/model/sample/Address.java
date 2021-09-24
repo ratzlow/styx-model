@@ -3,10 +3,10 @@ package net.styx.model.sample;
 import net.styx.model.meta.*;
 
 public class Address implements Node<Address.Type> {
-    private final NodeMixin<Address.Type> mixin;
+    private final GenericNode<Type> mixin;
 
     public Address(NodePath<Type> path, StateTracker stateTracker) {
-        this.mixin = new NodeMixin<>(stateTracker, path);
+        this.mixin = new GenericNode<>(stateTracker, path);
     }
 
     public String getStreet() {

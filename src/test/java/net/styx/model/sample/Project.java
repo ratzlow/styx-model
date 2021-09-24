@@ -2,31 +2,39 @@ package net.styx.model.sample;
 
 import net.styx.model.meta.*;
 
-public class Book implements Node<Book.Type> {
+public class Project implements Node<Project.Type> {
     private final GenericNode<Type> mixin;
 
     //------------------------------------------- Constructors ---------------------------------------------------------
 
-    public Book(StateTracker stateTracker, NodePath<Type> path) {
+    public Project(NodePath<Project.Type> path, StateTracker stateTracker) {
         this.mixin = new GenericNode<>(stateTracker, path);
     }
 
-    public Book(StateTracker stateTracker) {
-        this(stateTracker, Type.DEFAULT_PATH);
+    public Project(StateTracker stateTracker) {
+        this(Type.DEFAULT_PATH, stateTracker);
     }
 
-    public Book() {
-        this(new StateTracker(), Type.DEFAULT_PATH);
+    public Project() {
+        this(Type.DEFAULT_PATH, new StateTracker());
     }
 
     //------------------------------------------- Properties -----------------------------------------------------------
 
-    public String getDescription() {
-        return mixin.tracker().get(mixin.getNodePath(), Type.INSTANCE.description);
+    public String getPosition() {
+        return mixin.tracker().get(mixin.getNodePath(), Type.INSTANCE.position);
     }
 
-    public void setDescription(String description) {
-        mixin.tracker().set(mixin.getNodePath(), Type.INSTANCE.description, description);
+    public void setPosition(String position) {
+        mixin.tracker().set(mixin.getNodePath(), Type.INSTANCE.position, position);
+    }
+
+    public int getTeamSize() {
+        return mixin.tracker().get(mixin.getNodePath(), Type.INSTANCE.teamSize);
+    }
+
+    public void setTeamSize(int teamSize) {
+        mixin.tracker().set(mixin.getNodePath(), Type.INSTANCE.teamSize, teamSize);
     }
 
     //------------------------------------------- NodeMixin API --------------------------------------------------------
@@ -53,13 +61,15 @@ public class Book implements Node<Book.Type> {
 
     //------------------------------------------- Meta -----------------------------------------------------------------
 
-    public static class Type extends ComponentType<Book> {
+    public static class Type extends ComponentType<Project> {
         public static final Type INSTANCE = new Type();
         public static final NodePath<Type> DEFAULT_PATH = new NodePath<>(new NodeID<>(INSTANCE));
-        private final NodeID<NodeType<String>> description = new NodeID<>(Dictionary.DESCRIPTION);
+
+        private final NodeID<NodeType<String>> position = new NodeID<>(Dictionary.POSITION);
+        private final NodeID<NodeType<Integer>> teamSize = new NodeID<>(Dictionary.TEAM_SIZE);
 
         Type() {
-            super(3, "book");
+            super(3, "project");
         }
     }
 }

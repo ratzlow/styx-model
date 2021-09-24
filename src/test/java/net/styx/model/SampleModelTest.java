@@ -22,7 +22,7 @@ public class SampleModelTest {
     void wirePojoStyle() {
         final StateTracker tracker = new StateTracker();
         Person.Type personDef = Person.Type.INSTANCE;
-        Person person = personDef.create(tracker);
+        Person person = new Person(tracker);
 
         person.setName("Frank");
         Assertions.assertEquals("Frank", person.getName());
@@ -48,7 +48,7 @@ public class SampleModelTest {
 
     @Test
     void nullSafeGetOnContainer() {
-        Person person = createPerson();
+        Person person = new Person();
         person.setName("Laeti");
 
         LocalDateTime birthday = LocalDateTime.now();
@@ -88,6 +88,7 @@ public class SampleModelTest {
 
         Assertions.assertEquals(2, storeKey.getNodeIDs().size());
         Assertions.assertEquals(description, value);
+        Assertions.assertEquals(description, book.getDescription());
 
         // now add it to a collection
         StateTracker booksTracker = new StateTracker();
@@ -120,7 +121,7 @@ public class SampleModelTest {
     @Test
     void attributeAsList() {
         StateTracker tracker = new StateTracker();
-        Person p = new Person(Person.Type.ROOT_ID, tracker);
+        Person p = new Person(tracker, Person.Type.ROOT_ID);
         Assertions.assertNull(p.getAccounts());
         List<String> accounts = new ArrayList<>(List.of("123", "456"));
         p.setAccounts(accounts);
@@ -130,7 +131,7 @@ public class SampleModelTest {
 
     @Test
     void nullSafeGetOnGroup() {
-        Person person = createPerson();
+        Person person = new Person();
         // check collection exists
         Assertions.assertNull(person.getBooks());
         Collection<Book> books = person.books();
@@ -146,11 +147,5 @@ public class SampleModelTest {
         // add elements
         Book book_1 = new Book();
         person.books().add(book_1);
-    }
-
-    private Person createPerson() {
-        StateTracker tracker = new StateTracker();
-        Person.Type personDef = Person.Type.INSTANCE;
-        return personDef.create(tracker);
     }
 }

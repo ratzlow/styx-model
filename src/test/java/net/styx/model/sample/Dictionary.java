@@ -24,6 +24,9 @@ public class Dictionary {
 
     public static NodeType<String> STREET = new ComponentType<>(110, "street");
     public static NodeType<String> DESCRIPTION = new ComponentType<>(111, "description");
-
     public static NodeType<Integer> ZIP = new ComponentType<>(112, "zip");
+
+    public static NodeType<String> POSITION = new ComponentType<>(113, "position");
+    public static NodeType<Integer> TEAM_SIZE = new ComponentType<>(114, "teamSize");
+    public static NodeType<Money> INCOME = new ComponentType<>(115, "income");
 }

@@ -7,12 +7,20 @@ import java.util.Collection;
 import java.util.List;
 
 public class Person implements Node<Person.Type> {
-    private final NodeMixin<Person.Type> mixin;
+    private final GenericNode<Type> mixin;
 
-    public Person(NodePath<Type> path, StateTracker stateTracker) {
-        this.mixin = new NodeMixin<>(stateTracker, path);
+    public Person() {
+        this(new StateTracker(), Type.ROOT_ID);
+    }
+
+    public Person(StateTracker stateTracker, NodePath<Type> path) {
+        this.mixin = new GenericNode<>(stateTracker, path);
     }
     
+    public Person(StateTracker stateTracker) {
+        this(stateTracker, Type.ROOT_ID);
+    }
+
     public String getName() {
         return mixin.tracker().get(mixin.getNodePath(),  Type.INSTANCE.name);
     }
@@ -73,6 +81,18 @@ public class Person implements Node<Person.Type> {
         mixin.tracker().set(mixin.getNodePath(), Type.INSTANCE.books, books);
     }
 
+    public Collection<Job> getJobs() {
+        return mixin.tracker().get(mixin.getNodePath(), Type.INSTANCE.jobs);
+    }
+
+    public Collection<Job> jobs() {
+        return mixin.tracker().get(mixin.getNodePath(), Type.INSTANCE.jobs, fqPath -> new Group<>(fqPath, mixin.tracker()));
+    }
+
+    public void setJobs(Collection<Job> assignments) {
+        mixin.tracker().set(mixin.getNodePath(), Type.INSTANCE.jobs, assignments);
+    }
+
     //------------------------------------------- NodeMixin API --------------------------------------------------------
 
     @Override
@@ -111,18 +131,13 @@ public class Person implements Node<Person.Type> {
         public final NodeID<Address.Type> home = new NodeID<>(2, "home", Address.Type.INSTANCE);
 
         // groups
-        private final NodeID<GroupType<Book, Collection<Book>, Book.Type>> books = new NodeID<>(new GroupType<>(7, "books", Book.Type.INSTANCE));
+        private final NodeID<GroupType<Book, Collection<Book>, Book.Type>> books =
+                new NodeID<>(new GroupType<>(7, "books", Book.Type.INSTANCE));
+        private final NodeID<GroupType<Job, Collection<Job>, Job.Type>> jobs =
+                new NodeID<>(new GroupType<>(7, "jobs", Job.Type.INSTANCE));
 
         Type() {
             super(1, "person");
-        }
-
-        public Person create(StateTracker tracker) {
-            return create(ROOT_ID, tracker);
-        }
-
-        public Person create(NodePath<Type> path, StateTracker tracker) {
-            return new Person(path, tracker);
         }
     }
 }

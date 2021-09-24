@@ -2,20 +2,22 @@ package net.styx.model.sample;
 
 import net.styx.model.meta.*;
 
-public class Book implements Node<Book.Type> {
-    private final GenericNode<Type> mixin;
+import java.util.Collection;
+
+public class Job implements Node<Job.Type> {
+    private final GenericNode<Job.Type> mixin;
 
     //------------------------------------------- Constructors ---------------------------------------------------------
 
-    public Book(StateTracker stateTracker, NodePath<Type> path) {
+    public Job(StateTracker stateTracker, NodePath<Type> path) {
         this.mixin = new GenericNode<>(stateTracker, path);
     }
 
-    public Book(StateTracker stateTracker) {
+    public Job(StateTracker stateTracker) {
         this(stateTracker, Type.DEFAULT_PATH);
     }
 
-    public Book() {
+    public Job() {
         this(new StateTracker(), Type.DEFAULT_PATH);
     }
 
@@ -27,6 +29,28 @@ public class Book implements Node<Book.Type> {
 
     public void setDescription(String description) {
         mixin.tracker().set(mixin.getNodePath(), Type.INSTANCE.description, description);
+    }
+
+    public Money getIncome() {
+        return mixin.tracker().get(mixin.getNodePath(), Type.INSTANCE.income);
+    }
+
+    public void setIncome(Money income) {
+        mixin.tracker().set(mixin.getNodePath(), Type.INSTANCE.income, income);
+    }
+
+    public Collection<Project> getAssignments() {
+        return mixin.tracker().get(mixin.getNodePath(), Type.INSTANCE.assignments);
+    }
+
+    public Collection<Project> assignments() {
+        // TODO: can we hide known params behind mixin API? Here Group: only NodeID needed!, NodePath in all cases known to GenNode
+        return mixin.tracker().get(mixin.getNodePath(), Type.INSTANCE.assignments, fqPath -> new Group<>(fqPath, mixin.tracker()));
+    }
+
+    // TODO: test assignments node is merged into tree and unmerged when set to null
+    public void setAssignments(Collection<Project> assignments) {
+        mixin.tracker().set(mixin.getNodePath(), Type.INSTANCE.assignments, assignments);
     }
 
     //------------------------------------------- NodeMixin API --------------------------------------------------------
@@ -53,13 +77,19 @@ public class Book implements Node<Book.Type> {
 
     //------------------------------------------- Meta -----------------------------------------------------------------
 
-    public static class Type extends ComponentType<Book> {
+    public static class Type extends ComponentType<Job> {
         public static final Type INSTANCE = new Type();
         public static final NodePath<Type> DEFAULT_PATH = new NodePath<>(new NodeID<>(INSTANCE));
+
         private final NodeID<NodeType<String>> description = new NodeID<>(Dictionary.DESCRIPTION);
+        private final NodeID<NodeType<Money>> income = new NodeID<>(Dictionary.INCOME);
+        // groups
+        private final NodeID<GroupType<Project, Collection<Project>, Project.Type>> assignments =
+                new NodeID<>(new GroupType<>(72, "assignments", Project.Type.INSTANCE));
+
 
         Type() {
-            super(3, "book");
+            super(3, "job");
         }
     }
 }

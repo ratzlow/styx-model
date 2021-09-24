@@ -3,7 +3,6 @@ package net.styx.model.meta;
 import java.util.Collection;
 
 public class GroupType<E, C extends Collection<E>, T extends NodeType<E>> implements NodeType<C> {
-
     private final int id;
     private final String name;
     private final T elementType;

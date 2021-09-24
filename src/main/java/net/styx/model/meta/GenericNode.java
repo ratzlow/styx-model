@@ -1,11 +1,10 @@
 package net.styx.model.meta;
 
-public class NodeMixin<T extends NodeType<?>> implements Node<T> {
-
+public class GenericNode<T extends NodeType<?>> implements Node<T> {
     private NodePath<T> path;
     private StateTracker tracker;
 
-    public NodeMixin(StateTracker tracker, NodePath<T> path) {
+    public GenericNode(StateTracker tracker, NodePath<T> path) {
         this.path = path;
         this.tracker = tracker;
     }
